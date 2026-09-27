@@ -913,11 +913,6 @@ https://github.com/Brahma-S-P/TradeAI
 
 ------------------------------------------------------------------------
 
-```{=html}
-<p align="center">
-```
-`<strong>`{=html}From market research to strategy execution --- through
-natural language.`</strong>`{=html}
-```{=html}
-</p>
-```
+From market research to strategy execution — through natural
+language.
+From market research to strategy execution — through natural language.
