@@ -1,0 +1,2 @@
+# TradeAI
+Local AI Trading 
