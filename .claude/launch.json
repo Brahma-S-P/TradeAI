@@ -1,0 +1,21 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "trading-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--host"],
+      "port": 5173,
+      "autoPort": true,
+      "cwd": "frontend"
+    },
+    {
+      "name": "trading-backend",
+      "runtimeExecutable": "D:/Projects/trading/version1/backend/venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+      "port": 8000,
+      "autoPort": true,
+      "cwd": "backend"
+    }
+  ]
+}

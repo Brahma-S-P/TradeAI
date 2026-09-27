@@ -1,0 +1,100 @@
+{
+  "app": {
+    "layout": {
+      "sidebar": {
+        "type": "collapsible",
+        "groups": ["Sandbox", "Live"]
+      },
+      "topBar": {
+        "components": ["MarketStatusIndicator", "AccountConnectionStatus", "LivePnLSummary", "NotificationBell"]
+      },
+      "resizing": "all panels within a tab are user-resizable via drag handles (react-resizable-panels or equivalent)"
+    }
+  },
+  "tabGroups": {
+    "Sandbox": {
+      "tabs": {
+        "StockPicker": {
+          "purpose": "AI chat generates Python code that screens/selects candidate stocks",
+          "components": [
+            { "name": "AIChatPanel", "position": "right", "description": "Chat with OpenAI to describe a picking strategy in plain language" },
+            { "name": "CodePreviewPanel", "description": "Shows the AI-generated Python code before/after running, read-only with syntax highlighting" },
+            { "name": "RunControls", "description": "Run / Stop / Re-run buttons for executing generated code in sandbox" },
+            { "name": "ResultsTable", "description": "List of selected stocks with key columns (symbol, price, matched criteria, timestamp)" },
+            { "name": "StrategyVersionSelector", "description": "Dropdown/list to view or switch between saved versions (v1, v2, v3...) of the current strategy" },
+            { "name": "SaveStrategyButton", "description": "Persist current code+results as a new/updated Strategy version" },
+            { "name": "SavedStrategiesSidebar", "description": "Browse previously saved strategies from this or other tabs" }
+          ]
+        },
+        "StockAnalyzer": {
+          "purpose": "Deep-dive visualization of the subset of stocks picked in StockPicker",
+          "components": [
+            { "name": "AIChatPanel", "position": "right", "description": "Ask the AI to analyze/explain patterns in the selected stocks" },
+            { "name": "StockListPanel", "description": "The subset of stocks carried over from StockPicker, selectable one at a time or multi-select" },
+            { "name": "CandlestickChart", "description": "OHLC chart for the selected stock with overlay indicators" },
+            { "name": "IndicatorControls", "description": "Toggle indicators: moving averages, RSI, MACD, volume, Bollinger Bands, etc." },
+            { "name": "MetricsPanel", "description": "Key value/fundamental metrics for the selected stock (P/E, market cap, etc. if available)" },
+            { "name": "ComparisonView", "description": "Side-by-side or overlay comparison across multiple selected stocks" },
+            { "name": "NotesPanel", "description": "Freeform notes/annotations per stock, saved to workspace store" }
+          ]
+        },
+        "Backtesting": {
+          "purpose": "Run a Strategy + RiskProfile against historical data",
+          "components": [
+            { "name": "AIChatPanel", "position": "right", "description": "Describe risk logic in plain language to generate/edit a RiskProfile; also used to adjust backtest config" },
+            { "name": "StrategySelector", "description": "Pick a saved Strategy (with version) to backtest" },
+            { "name": "RiskProfileSelector", "description": "Pick a saved RiskProfile (with version) to attach, or create a new one via chat" },
+            { "name": "BacktestConfigPanel", "description": "Date range, capital, instrument universe, other run parameters" },
+            { "name": "RunControls", "description": "Run / Stop backtest execution" },
+            { "name": "TradeLogTable", "description": "Trade-by-trade log: entry/exit date, price, qty, P&L, signal reason" },
+            { "name": "SummaryStatsPanel", "description": "Win rate, total return, avg win/loss, max drawdown, Sharpe ratio, trade count" },
+            { "name": "EquityCurveChart", "description": "Cumulative P&L over time" },
+            { "name": "RunHistoryList", "description": "Past backtest runs for this strategy, for comparison" },
+            { "name": "PromoteToLiveButton", "description": "Explicit action to promote this Strategy+RiskProfile combo to the Live tab group" }
+          ]
+        }
+      }
+    },
+    "Live": {
+      "tabs": {
+        "LiveStockPick": {
+          "purpose": "Pick stocks against live market data, manually or via a promoted strategy",
+          "components": [
+            { "name": "AIChatPanel", "position": "right", "description": "AI assistance for manual picking or adjusting a live strategy run" },
+            { "name": "ModeToggle", "description": "Switch between Manual and Strategy-based picking" },
+            { "name": "PromotedStrategySelector", "description": "Choose which promoted strategy is actively screening (Strategy mode only)" },
+            { "name": "LiveWatchlistTable", "description": "Live-updating (WebSocket) table of tracked/matched stocks with price, volume, signal status" },
+            { "name": "ManualSearchBar", "description": "Search/add any instrument manually to the watchlist" },
+            { "name": "SignalFeed", "description": "Real-time stream of new matches/signals as they fire" }
+          ]
+        },
+        "LiveTrade": {
+          "purpose": "Order execution — manual or bot-based, with approval gating",
+          "components": [
+            { "name": "AIChatPanel", "position": "right", "description": "AI assistance/explanation for pending trade suggestions" },
+            { "name": "ModeToggle", "description": "Switch between Manual and Bot-based trading" },
+            { "name": "PendingApprovalsQueue", "description": "Bot-proposed trades awaiting user approve/reject (default mode)" },
+            { "name": "AutonomousModeControls", "description": "Per-strategy opt-in toggle for autonomous execution, only enabled after backtest+trial requirements met" },
+            { "name": "OrderTicketPanel", "description": "Manual order entry: instrument, qty, order type, price, SL/target" },
+            { "name": "PositionsTable", "description": "Live-updating (WebSocket) open positions with P&L" },
+            { "name": "OrderBookTable", "description": "Pending/executed/cancelled orders for the day" },
+            { "name": "RiskControlsPanel", "description": "Max position size, daily loss limit, max trades/day, kill switch" },
+            { "name": "LivePnLSummary", "description": "Realized + unrealized P&L for the day" }
+          ]
+        }
+      }
+    }
+  },
+  "sharedDataModels": {
+    "Strategy": ["id", "name", "description", "version", "code", "strategy_type (parameter|pattern)", "created_at"],
+    "RiskProfile": ["id", "name", "description", "version", "code", "created_at"],
+    "BacktestRun": ["id", "strategy_id", "risk_profile_id", "mode (backtest|live)", "params", "results", "created_at"],
+    "WorkspaceArtifact": ["id", "source_tab", "type", "payload_ref", "linked_ids", "created_at"]
+  },
+  "openQuestions": [
+    "Exact indicator list for StockAnalyzer",
+    "LiveStockPick manual mode UX details",
+    "Concrete default values for RiskControlsPanel limits",
+    "Kite Connect account setup status"
+  ]
+}

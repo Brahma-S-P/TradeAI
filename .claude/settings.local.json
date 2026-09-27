@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "PowerShell(python \"D:\\\\Projects\\\\DSA-Interview-Prep\\\\normalize.py\")",
+      "Bash(mvn compile *)"
+    ]
+  }
+}

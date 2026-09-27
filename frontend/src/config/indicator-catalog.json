@@ -1,0 +1,749 @@
+{
+  "strategy": {
+    "name": "Systematic Momentum Stock Picker",
+    "style": "momentum_only",
+    "market": "NSE_INDIA",
+    "objective": "Rank stocks by momentum strength, continuation probability, relative strength and risk-adjusted trend quality"
+  },
+  "categories": [
+    {
+      "id": "price_momentum",
+      "label": "Price Momentum",
+      "description": "Multi-timeframe price returns and acceleration",
+      "indicators": [
+        { "id": "return_1d", "label": "1-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last trading day. Captures overnight and intraday momentum.", "formula": "(Close / Close[1 day ago] - 1) × 100" },
+        { "id": "return_3d", "label": "3-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last 3 trading days. Useful for spotting very short-term momentum bursts.", "formula": "(Close / Close[3 days ago] - 1) × 100" },
+        { "id": "return_5d", "label": "5-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last 5 trading days. Measures short-term momentum direction and strength.", "formula": "(Close / Close[5 days ago] - 1) × 100" },
+        { "id": "return_10d", "label": "10-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last 10 trading days. Captures two-week momentum trends.", "formula": "(Close / Close[10 days ago] - 1) × 100" },
+        { "id": "return_20d", "label": "20-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last 20 trading days (~1 month). A key swing-trading momentum window.", "formula": "(Close / Close[20 days ago] - 1) × 100" },
+        { "id": "return_40d", "label": "40-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last 40 trading days (~2 months). Captures medium-term trend moves.", "formula": "(Close / Close[40 days ago] - 1) × 100" },
+        { "id": "return_60d", "label": "60-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last 60 trading days (~3 months). A standard quarterly momentum measure.", "formula": "(Close / Close[60 days ago] - 1) × 100" },
+        { "id": "return_120d", "label": "120-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last 120 trading days (~6 months). Measures intermediate-term momentum.", "formula": "(Close / Close[120 days ago] - 1) × 100" },
+        { "id": "return_252d", "label": "252-Day Return", "type": "number", "unit": "%", "description": "Percentage price change over the last 252 trading days (~1 year). The classic annual momentum factor.", "formula": "(Close / Close[252 days ago] - 1) × 100" },
+        { "id": "return_252d_ex_21d", "label": "252D Return ex-21D", "type": "number", "unit": "%", "description": "12-month return excluding the most recent month. Removes short-term reversal noise from the annual momentum signal.", "formula": "(Close[21 days ago] / Close[252 days ago] - 1) × 100" },
+        { "id": "return_acceleration_5d_vs_20d", "label": "Acceleration 5D vs 20D", "type": "number", "description": "Ratio of 5-day return to 20-day return. Values above 1 indicate momentum is accelerating in the short term.", "formula": "Return_5D / Return_20D" },
+        { "id": "return_acceleration_10d_vs_60d", "label": "Acceleration 10D vs 60D", "type": "number", "description": "Ratio of 10-day return to 60-day return. Detects whether recent momentum is speeding up relative to the longer trend.", "formula": "Return_10D / Return_60D" },
+        { "id": "momentum_percentile", "label": "Momentum Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this stock's composite momentum score across all stocks in the universe. Higher means stronger momentum vs peers.", "formula": "Percentile(MomentumScore, Universe)" },
+        { "id": "return_percentile", "label": "Return Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this stock's return among all stocks. Shows where this stock stands in the cross-sectional return distribution.", "formula": "Percentile(Return, Universe)" }
+      ]
+    },
+    {
+      "id": "relative_strength",
+      "label": "Relative Strength",
+      "description": "RS vs Nifty, sector, and peer group",
+      "indicators": [
+        { "id": "rs_vs_nifty_1d", "label": "RS vs Nifty 1D", "type": "number", "description": "Stock's 1-day return minus Nifty's 1-day return. Positive values mean the stock outperformed the market today.", "formula": "Return_1D(Stock) - Return_1D(Nifty)" },
+        { "id": "rs_vs_nifty_5d", "label": "RS vs Nifty 5D", "type": "number", "description": "Stock's 5-day return minus Nifty's 5-day return. Measures short-term outperformance vs the broad market.", "formula": "Return_5D(Stock) - Return_5D(Nifty)" },
+        { "id": "rs_vs_nifty_20d", "label": "RS vs Nifty 20D", "type": "number", "description": "Stock's 20-day return minus Nifty's 20-day return. Captures monthly relative outperformance vs the market.", "formula": "Return_20D(Stock) - Return_20D(Nifty)" },
+        { "id": "rs_vs_nifty_60d", "label": "RS vs Nifty 60D", "type": "number", "description": "Stock's 60-day return minus Nifty's 60-day return. Quarterly relative strength vs the broad index.", "formula": "Return_60D(Stock) - Return_60D(Nifty)" },
+        { "id": "rs_vs_nifty_120d", "label": "RS vs Nifty 120D", "type": "number", "description": "Stock's 120-day return minus Nifty's 120-day return. Half-year relative performance vs the market.", "formula": "Return_120D(Stock) - Return_120D(Nifty)" },
+        { "id": "rs_vs_sector_5d", "label": "RS vs Sector 5D", "type": "number", "description": "Stock's 5-day return minus its sector's 5-day return. Identifies stocks leading within their sector.", "formula": "Return_5D(Stock) - Return_5D(Sector)" },
+        { "id": "rs_vs_sector_20d", "label": "RS vs Sector 20D", "type": "number", "description": "Stock's 20-day return minus its sector's 20-day return. Shows monthly outperformance within the sector.", "formula": "Return_20D(Stock) - Return_20D(Sector)" },
+        { "id": "rs_vs_sector_60d", "label": "RS vs Sector 60D", "type": "number", "description": "Stock's 60-day return minus its sector's 60-day return. Quarterly sector-relative strength.", "formula": "Return_60D(Stock) - Return_60D(Sector)" },
+        { "id": "rs_vs_sector_120d", "label": "RS vs Sector 120D", "type": "number", "description": "Stock's 120-day return minus its sector's 120-day return. Half-year sector-relative momentum.", "formula": "Return_120D(Stock) - Return_120D(Sector)" },
+        { "id": "rs_vs_peer_group", "label": "RS vs Peer Group", "type": "number", "description": "Stock's return relative to its peer group average. Identifies the strongest names among direct competitors.", "formula": "Return(Stock) - Average(Return(Peers))" },
+        { "id": "rs_ratio", "label": "RS Ratio", "type": "number", "description": "Price of stock divided by price of Nifty, normalized. A rising RS ratio means the stock is outperforming the index.", "formula": "Close(Stock) / Close(Nifty)" },
+        { "id": "rs_slope_5d", "label": "RS Slope 5D", "type": "number", "description": "Slope of the RS ratio line over 5 days. Positive slope means relative strength is improving.", "formula": "LinearSlope(RS_Ratio, 5)" },
+        { "id": "rs_slope_20d", "label": "RS Slope 20D", "type": "number", "description": "Slope of the RS ratio line over 20 days. Shows the medium-term direction of relative outperformance.", "formula": "LinearSlope(RS_Ratio, 20)" },
+        { "id": "rs_slope_60d", "label": "RS Slope 60D", "type": "number", "description": "Slope of the RS ratio line over 60 days. Reveals the longer-term trajectory of relative strength.", "formula": "LinearSlope(RS_Ratio, 60)" },
+        { "id": "rs_acceleration_5d", "label": "RS Acceleration 5D", "type": "number", "description": "Change in RS slope over 5 days. Positive acceleration means relative strength is gaining speed.", "formula": "RS_Slope_5D(today) - RS_Slope_5D(5 days ago)" },
+        { "id": "rs_acceleration_20d", "label": "RS Acceleration 20D", "type": "number", "description": "Change in RS slope over 20 days. Detects whether relative outperformance is speeding up or slowing down.", "formula": "RS_Slope_20D(today) - RS_Slope_20D(20 days ago)" },
+        { "id": "rs_breakout", "label": "RS Breakout", "type": "boolean", "description": "True when the RS ratio breaks above its recent high. Signals that relative outperformance is reaching new levels.", "formula": "RS_Ratio > Max(RS_Ratio[1..20])" },
+        { "id": "rs_new_high", "label": "RS New High", "type": "boolean", "description": "True when the RS ratio hits a new 52-week high. Strong signal of sustained leadership vs the market.", "formula": "RS_Ratio = Max(RS_Ratio[1..252])" },
+        { "id": "rs_percentile", "label": "RS Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this stock's relative strength among all stocks in the universe. Higher means stronger outperformance vs peers.", "formula": "Percentile(RS_Ratio, Universe)" }
+      ]
+    },
+    {
+      "id": "moving_averages",
+      "label": "Moving Averages",
+      "description": "SMA/EMA values, crossovers, slopes, and alignment",
+      "indicators": [
+        { "id": "sma_5", "label": "SMA 5", "type": "number", "unit": "₹", "description": "Simple moving average of closing prices over 5 days. Tracks very short-term price direction.", "formula": "Average(Close[1..5])" },
+        { "id": "sma_10", "label": "SMA 10", "type": "number", "unit": "₹", "description": "Simple moving average of closing prices over 10 days. A two-week trend reference level.", "formula": "Average(Close[1..10])" },
+        { "id": "sma_20", "label": "SMA 20", "type": "number", "unit": "₹", "description": "Simple moving average of closing prices over 20 days. Key short-term trend and mean-reversion reference.", "formula": "Average(Close[1..20])" },
+        { "id": "sma_50", "label": "SMA 50", "type": "number", "unit": "₹", "description": "Simple moving average of closing prices over 50 days. A widely watched intermediate trend line.", "formula": "Average(Close[1..50])" },
+        { "id": "sma_100", "label": "SMA 100", "type": "number", "unit": "₹", "description": "Simple moving average of closing prices over 100 days. Bridges short-term and long-term trend views.", "formula": "Average(Close[1..100])" },
+        { "id": "sma_200", "label": "SMA 200", "type": "number", "unit": "₹", "description": "Simple moving average of closing prices over 200 days. The primary long-term trend indicator; price above it signals a bull trend.", "formula": "Average(Close[1..200])" },
+        { "id": "ema_9", "label": "EMA 9", "type": "number", "unit": "₹", "description": "Exponential moving average over 9 periods. Reacts faster than SMA for quick trend signals.", "formula": "EMA(Close, 9)" },
+        { "id": "ema_20", "label": "EMA 20", "type": "number", "unit": "₹", "description": "Exponential moving average over 20 periods. A responsive short-term trend filter favored by swing traders.", "formula": "EMA(Close, 20)" },
+        { "id": "ema_50", "label": "EMA 50", "type": "number", "unit": "₹", "description": "Exponential moving average over 50 periods. Intermediate trend direction with faster response than SMA 50.", "formula": "EMA(Close, 50)" },
+        { "id": "ema_100", "label": "EMA 100", "type": "number", "unit": "₹", "description": "Exponential moving average over 100 periods. Smooths intermediate-term trend while remaining responsive.", "formula": "EMA(Close, 100)" },
+        { "id": "ema_200", "label": "EMA 200", "type": "number", "unit": "₹", "description": "Exponential moving average over 200 periods. Long-term trend direction with quicker reaction than SMA 200.", "formula": "EMA(Close, 200)" },
+        { "id": "price_vs_sma20", "label": "Price vs SMA20", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 20-day SMA. Measures short-term extension above or below the mean.", "formula": "(Close / SMA_20 - 1) × 100" },
+        { "id": "price_vs_sma50", "label": "Price vs SMA50", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 50-day SMA. Shows how stretched the price is from the intermediate trend.", "formula": "(Close / SMA_50 - 1) × 100" },
+        { "id": "price_vs_sma100", "label": "Price vs SMA100", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 100-day SMA. Gauges extension relative to the longer trend.", "formula": "(Close / SMA_100 - 1) × 100" },
+        { "id": "price_vs_sma200", "label": "Price vs SMA200", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 200-day SMA. Large values indicate overextension from the long-term trend.", "formula": "(Close / SMA_200 - 1) × 100" },
+        { "id": "price_vs_ema20", "label": "Price vs EMA20", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 20-day EMA. Measures short-term extension using an exponential baseline.", "formula": "(Close / EMA_20 - 1) × 100" },
+        { "id": "price_vs_ema50", "label": "Price vs EMA50", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 50-day EMA. Shows how far price has deviated from the intermediate EMA.", "formula": "(Close / EMA_50 - 1) × 100" },
+        { "id": "sma20_vs_sma50", "label": "SMA20 vs SMA50", "type": "number", "unit": "%", "description": "Percentage gap between 20-day and 50-day SMA. Positive values confirm the short-term trend leads the intermediate trend.", "formula": "(SMA_20 / SMA_50 - 1) × 100" },
+        { "id": "sma50_vs_sma200", "label": "SMA50 vs SMA200", "type": "number", "unit": "%", "description": "Percentage gap between 50-day and 200-day SMA. Positive means a golden cross environment; negative means death cross.", "formula": "(SMA_50 / SMA_200 - 1) × 100" },
+        { "id": "ema20_vs_ema50", "label": "EMA20 vs EMA50", "type": "number", "unit": "%", "description": "Percentage gap between 20-day and 50-day EMA. A positive and widening gap signals strengthening trend.", "formula": "(EMA_20 / EMA_50 - 1) × 100" },
+        { "id": "ema50_vs_ema200", "label": "EMA50 vs EMA200", "type": "number", "unit": "%", "description": "Percentage gap between 50-day and 200-day EMA. Confirms the long-term trend direction with EMA sensitivity.", "formula": "(EMA_50 / EMA_200 - 1) × 100" },
+        { "id": "sma20_slope", "label": "SMA20 Slope", "type": "number", "description": "Rate of change of the 20-day SMA. Positive slope confirms a rising short-term trend.", "formula": "LinearSlope(SMA_20, 5)" },
+        { "id": "sma50_slope", "label": "SMA50 Slope", "type": "number", "description": "Rate of change of the 50-day SMA. Positive slope confirms a rising intermediate-term trend.", "formula": "LinearSlope(SMA_50, 5)" },
+        { "id": "sma100_slope", "label": "SMA100 Slope", "type": "number", "description": "Rate of change of the 100-day SMA. Shows whether the longer trend is accelerating or flattening.", "formula": "LinearSlope(SMA_100, 5)" },
+        { "id": "sma200_slope", "label": "SMA200 Slope", "type": "number", "description": "Rate of change of the 200-day SMA. A positive slope confirms the primary long-term uptrend.", "formula": "LinearSlope(SMA_200, 5)" },
+        { "id": "ema20_slope", "label": "EMA20 Slope", "type": "number", "description": "Rate of change of the 20-day EMA. Responsive measure of short-term trend direction.", "formula": "LinearSlope(EMA_20, 5)" },
+        { "id": "ema50_slope", "label": "EMA50 Slope", "type": "number", "description": "Rate of change of the 50-day EMA. Shows intermediate trend momentum direction.", "formula": "LinearSlope(EMA_50, 5)" },
+        { "id": "ema200_slope", "label": "EMA200 Slope", "type": "number", "description": "Rate of change of the 200-day EMA. Confirms long-term trend direction using the exponential average.", "formula": "LinearSlope(EMA_200, 5)" },
+        { "id": "moving_average_alignment_score", "label": "MA Alignment Score", "type": "number", "description": "Composite score measuring how well all moving averages are stacked in bullish order. Higher scores indicate perfect bullish alignment (price > EMA20 > SMA50 > SMA200).", "formula": "Score based on: Price > EMA20 > SMA50 > SMA200 and all slopes positive" }
+      ]
+    },
+    {
+      "id": "trend_structure",
+      "label": "Trend Structure",
+      "description": "Higher highs/lows, swing analysis, trend duration",
+      "indicators": [
+        { "id": "higher_high_count", "label": "Higher High Count", "type": "number", "description": "Number of successive higher swing highs in the recent price structure. More higher highs confirm a healthy uptrend.", "formula": "Count of swing highs where each > previous" },
+        { "id": "higher_low_count", "label": "Higher Low Count", "type": "number", "description": "Number of successive higher swing lows in the recent price structure. Higher lows are the backbone of an uptrend.", "formula": "Count of swing lows where each > previous" },
+        { "id": "lower_high_count", "label": "Lower High Count", "type": "number", "description": "Number of successive lower swing highs. Increasing count signals a forming downtrend.", "formula": "Count of swing highs where each < previous" },
+        { "id": "lower_low_count", "label": "Lower Low Count", "type": "number", "description": "Number of successive lower swing lows. A hallmark of a downtrend or distribution phase.", "formula": "Count of swing lows where each < previous" },
+        { "id": "swing_high_strength", "label": "Swing High Strength", "type": "number", "description": "Magnitude of the last swing high relative to surrounding prices. Stronger swing highs indicate more conviction at turning points.", "formula": "SwingHigh / Average(Nearby Highs)" },
+        { "id": "swing_low_strength", "label": "Swing Low Strength", "type": "number", "description": "Magnitude of the last swing low relative to surrounding prices. Stronger swing lows indicate solid buying support.", "formula": "Average(Nearby Lows) / SwingLow" },
+        { "id": "trend_structure_score", "label": "Trend Structure Score", "type": "number", "description": "Composite score combining higher highs, higher lows, and trend consistency. Higher values signal a well-defined uptrend.", "formula": "Weighted(HigherHighCount, HigherLowCount, TrendConsistency)" },
+        { "id": "distance_from_swing_high", "label": "Distance from Swing High", "type": "number", "unit": "%", "description": "Percentage distance of current price below the last swing high. Small values mean the stock is near its recent peak.", "formula": "(Close / SwingHigh - 1) × 100" },
+        { "id": "distance_from_swing_low", "label": "Distance from Swing Low", "type": "number", "unit": "%", "description": "Percentage distance of current price above the last swing low. Larger values mean a bigger bounce from the trough.", "formula": "(Close / SwingLow - 1) × 100" },
+        { "id": "consecutive_up_days", "label": "Consecutive Up Days", "type": "number", "description": "Number of consecutive trading days with positive close-to-close returns. Long streaks indicate strong buying pressure.", "formula": "Count of consecutive days where Close > Close[prev]" },
+        { "id": "consecutive_down_days", "label": "Consecutive Down Days", "type": "number", "description": "Number of consecutive trading days with negative close-to-close returns. Long streaks indicate selling pressure.", "formula": "Count of consecutive days where Close < Close[prev]" },
+        { "id": "trend_duration_days", "label": "Trend Duration", "type": "number", "unit": "days", "description": "Number of days the current trend (up or down) has persisted. Longer durations suggest a well-established trend.", "formula": "Days since last trend reversal" },
+        { "id": "days_since_last_high", "label": "Days Since Last High", "type": "number", "description": "Trading days elapsed since the most recent 52-week high. Lower values mean the stock is in active leadership.", "formula": "Today - Date of last 52-week high" },
+        { "id": "days_since_last_low", "label": "Days Since Last Low", "type": "number", "description": "Trading days elapsed since the most recent 52-week low. Higher values suggest the stock has recovered from its trough.", "formula": "Today - Date of last 52-week low" }
+      ]
+    },
+    {
+      "id": "breakout",
+      "label": "Breakout",
+      "description": "Price breakouts, strength, volume confirmation, follow-through",
+      "indicators": [
+        { "id": "distance_from_20d_high", "label": "Distance from 20D High", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 20-day high. Near-zero values indicate the stock is testing its short-term peak.", "formula": "(Close / Max(High[1..20]) - 1) × 100" },
+        { "id": "distance_from_50d_high", "label": "Distance from 50D High", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 50-day high. Shows how far price is from the intermediate-term peak.", "formula": "(Close / Max(High[1..50]) - 1) × 100" },
+        { "id": "distance_from_100d_high", "label": "Distance from 100D High", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 100-day high. Measures proximity to the longer-term resistance.", "formula": "(Close / Max(High[1..100]) - 1) × 100" },
+        { "id": "distance_from_200d_high", "label": "Distance from 200D High", "type": "number", "unit": "%", "description": "Percentage distance of current price from the 200-day high. Values near zero signal the stock is challenging its long-term peak.", "formula": "(Close / Max(High[1..200]) - 1) × 100" },
+        { "id": "distance_from_52w_high", "label": "Distance from 52W High", "type": "number", "unit": "%", "description": "Percentage distance of current price from its 52-week high. The classic measure of how close a stock is to its annual peak.", "formula": "(Close / Max(High[1..252]) - 1) × 100" },
+        { "id": "distance_from_20d_low", "label": "Distance from 20D Low", "type": "number", "unit": "%", "description": "Percentage distance of current price above the 20-day low. Larger values mean the stock has bounced significantly from its short-term trough.", "formula": "(Close / Min(Low[1..20]) - 1) × 100" },
+        { "id": "distance_from_50d_low", "label": "Distance from 50D Low", "type": "number", "unit": "%", "description": "Percentage distance of current price above the 50-day low. Shows how far the stock has recovered from its intermediate-term floor.", "formula": "(Close / Min(Low[1..50]) - 1) × 100" },
+        { "id": "breakout_20d", "label": "20D Breakout", "type": "boolean", "description": "True when today's close exceeds the highest high of the previous 20 trading days. Signals potential start of a new short-term uptrend.", "formula": "Close > Max(High[1..20])" },
+        { "id": "breakout_50d", "label": "50D Breakout", "type": "boolean", "description": "True when today's close exceeds the highest high of the previous 50 trading days. A stronger breakout signal than 20D.", "formula": "Close > Max(High[1..50])" },
+        { "id": "breakout_52w", "label": "52W Breakout", "type": "boolean", "description": "True when today's close exceeds the 52-week high. The strongest breakout signal, often marking major trend initiations.", "formula": "Close > Max(High[1..252])" },
+        { "id": "breakout_percentage", "label": "Breakout %", "type": "number", "unit": "%", "description": "How far price has exceeded the prior resistance level. Larger breakout percentages suggest stronger conviction.", "formula": "(Close / Resistance - 1) × 100" },
+        { "id": "breakout_strength", "label": "Breakout Strength", "type": "number", "description": "Composite measure combining breakout distance, volume, and candle quality. Higher values indicate a more convincing breakout.", "formula": "Breakout% × VolumeRatio × ClosePosition" },
+        { "id": "breakout_volume_ratio", "label": "Breakout Volume Ratio", "type": "number", "description": "Volume on the breakout day divided by average volume. Values above 2 indicate strong volume confirmation of the breakout.", "formula": "Volume(breakout day) / Average(Volume, 20)" },
+        { "id": "breakout_close_strength", "label": "Breakout Close Strength", "type": "number", "description": "Position of the close within the breakout day's range. Closes near the high indicate buyers controlled the session.", "formula": "(Close - Low) / (High - Low)" },
+        { "id": "breakout_follow_through_1d", "label": "Follow-Through 1D", "type": "number", "unit": "%", "description": "Return on the day after a breakout. Positive follow-through validates the breakout's quality.", "formula": "(Close[+1] / Close[breakout] - 1) × 100" },
+        { "id": "breakout_follow_through_3d", "label": "Follow-Through 3D", "type": "number", "unit": "%", "description": "Cumulative return over 3 days after a breakout. Shows whether buyers remain committed post-breakout.", "formula": "(Close[+3] / Close[breakout] - 1) × 100" },
+        { "id": "breakout_follow_through_5d", "label": "Follow-Through 5D", "type": "number", "unit": "%", "description": "Cumulative return over 5 days after a breakout. Sustained follow-through confirms institutional interest.", "formula": "(Close[+5] / Close[breakout] - 1) × 100" },
+        { "id": "breakout_failure_rate", "label": "Failure Rate", "type": "number", "unit": "%", "description": "Percentage of recent breakouts that failed (price fell back below the breakout level). Lower failure rates indicate a more reliable stock.", "formula": "FailedBreakouts / TotalBreakouts × 100" },
+        { "id": "false_breakout_count", "label": "False Breakout Count", "type": "number", "description": "Number of breakouts in the recent past that reversed within a few days. Frequent false breakouts warn of choppy, unreliable price action.", "formula": "Count of breakouts where Close fell below level within 5 days" },
+        { "id": "breakout_retest_success", "label": "Retest Success", "type": "number", "unit": "%", "description": "Percentage of breakouts where price retested the breakout level and held. Higher rates indicate reliable support at the breakout zone.", "formula": "SuccessfulRetests / TotalRetests × 100" },
+        { "id": "resistance_test_count", "label": "Resistance Test Count", "type": "number", "description": "Number of times price has tested the current resistance level. More tests weaken resistance and increase breakout probability.", "formula": "Count of touches near the resistance level" },
+        { "id": "resistance_break_count", "label": "Resistance Break Count", "type": "number", "description": "Number of resistance levels broken during the current trend. More breaks indicate persistent upward momentum.", "formula": "Count of resistance levels exceeded" },
+        { "id": "support_distance", "label": "Support Distance", "type": "number", "unit": "%", "description": "Percentage distance from current price to the nearest support level. Larger values mean more downside risk before support.", "formula": "(Close - SupportLevel) / Close × 100" }
+      ]
+    },
+    {
+      "id": "volume",
+      "label": "Volume",
+      "description": "Volume averages, ratios, trends, and relative volume",
+      "indicators": [
+        { "id": "volume_1d", "label": "Volume 1D", "type": "number", "description": "Total shares traded today. Raw daily volume to gauge current interest in the stock.", "formula": "Volume(today)" },
+        { "id": "volume_5d_avg", "label": "Volume 5D Avg", "type": "number", "description": "Average daily volume over the last 5 trading days. Captures the very recent level of trading activity.", "formula": "Average(Volume[1..5])" },
+        { "id": "volume_20d_avg", "label": "Volume 20D Avg", "type": "number", "description": "Average daily volume over the last 20 trading days. The standard baseline for measuring normal volume.", "formula": "Average(Volume[1..20])" },
+        { "id": "volume_50d_avg", "label": "Volume 50D Avg", "type": "number", "description": "Average daily volume over the last 50 trading days. A smoothed baseline removing short-term volume spikes.", "formula": "Average(Volume[1..50])" },
+        { "id": "volume_ratio_1d", "label": "Volume Ratio 1D", "type": "number", "description": "Today's volume divided by the 20-day average. Values above 1 indicate above-average interest today.", "formula": "Volume(today) / Average(Volume[1..20])" },
+        { "id": "volume_ratio_5d", "label": "Volume Ratio 5D", "type": "number", "description": "5-day average volume divided by 20-day average. Sustained ratios above 1 suggest growing interest.", "formula": "Average(Volume[1..5]) / Average(Volume[1..20])" },
+        { "id": "volume_ratio_20d", "label": "Volume Ratio 20D", "type": "number", "description": "20-day average volume divided by 50-day average. Tracks whether volume is trending up over the medium term.", "formula": "Average(Volume[1..20]) / Average(Volume[1..50])" },
+        { "id": "volume_ratio_50d", "label": "Volume Ratio 50D", "type": "number", "description": "50-day average volume divided by 200-day average. Reveals long-term shifts in trading interest.", "formula": "Average(Volume[1..50]) / Average(Volume[1..200])" },
+        { "id": "up_volume", "label": "Up Volume", "type": "number", "description": "Sum of volume on days when the stock closed higher over the last 20 days. Shows buying-side volume commitment.", "formula": "Sum(Volume where Close > Close[prev], 20 days)" },
+        { "id": "down_volume", "label": "Down Volume", "type": "number", "description": "Sum of volume on days when the stock closed lower over the last 20 days. Shows selling-side volume commitment.", "formula": "Sum(Volume where Close < Close[prev], 20 days)" },
+        { "id": "up_down_volume_ratio", "label": "Up/Down Volume Ratio", "type": "number", "description": "Ratio of up-day volume to down-day volume. Values above 1 mean more volume flows in on up days, confirming bullish pressure.", "formula": "UpVolume / DownVolume" },
+        { "id": "volume_trend", "label": "Volume Trend", "type": "number", "description": "Slope of the volume moving average. Positive values mean volume is increasing over time, signaling growing interest.", "formula": "LinearSlope(Volume_20D_Avg, 20)" },
+        { "id": "volume_slope", "label": "Volume Slope", "type": "number", "description": "Short-term rate of change in daily volume. Captures whether volume is ramping up or fading.", "formula": "LinearSlope(Volume, 10)" },
+        { "id": "rvol", "label": "RVOL", "type": "number", "description": "Relative volume: today's volume divided by the average volume for this time of day. Highlights unusual intraday activity.", "formula": "Volume(now) / Average(Volume same time, 20 days)" },
+        { "id": "time_adjusted_rvol", "label": "Time-Adjusted RVOL", "type": "number", "description": "Relative volume adjusted for time elapsed in the trading session. More accurate than raw RVOL during market hours.", "formula": "Volume(now) / Expected_Volume(elapsed time)" },
+        { "id": "volume_percentile", "label": "Volume Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this stock's volume among all stocks in the universe. Compares this stock's activity to every other stock.", "formula": "Percentile(Volume, Universe)" },
+        { "id": "volume_zscore", "label": "Volume Z-Score", "type": "number", "description": "Number of standard deviations today's volume is from its 20-day mean. Values above 2 indicate abnormally high volume.", "formula": "(Volume - Mean(Volume, 20)) / StdDev(Volume, 20)" }
+      ]
+    },
+    {
+      "id": "volume_price_confirmation",
+      "label": "Volume-Price Confirmation",
+      "description": "Volume confirming price moves",
+      "indicators": [
+        { "id": "price_change_x_volume_ratio", "label": "Price Change × Volume Ratio", "type": "number", "description": "Product of price change percentage and volume ratio. High values mean a large move backed by heavy volume -- strong conviction.", "formula": "PriceChange% × VolumeRatio" },
+        { "id": "up_day_high_volume", "label": "Up Day High Volume", "type": "boolean", "description": "True when price closed up on above-average volume. Confirms that buyers are stepping in with conviction.", "formula": "Close > Close[prev] AND Volume > 1.5 × Avg(Volume, 20)" },
+        { "id": "up_day_low_volume", "label": "Up Day Low Volume", "type": "boolean", "description": "True when price closed up but on below-average volume. Suggests weak buying interest despite the positive close.", "formula": "Close > Close[prev] AND Volume < 0.7 × Avg(Volume, 20)" },
+        { "id": "down_day_high_volume", "label": "Down Day High Volume", "type": "boolean", "description": "True when price closed down on above-average volume. Indicates heavy selling pressure and potential distribution.", "formula": "Close < Close[prev] AND Volume > 1.5 × Avg(Volume, 20)" },
+        { "id": "down_day_low_volume", "label": "Down Day Low Volume", "type": "boolean", "description": "True when price closed down on below-average volume. Suggests the decline lacks conviction and may reverse.", "formula": "Close < Close[prev] AND Volume < 0.7 × Avg(Volume, 20)" },
+        { "id": "close_near_day_high", "label": "Close Near Day High", "type": "number", "unit": "%", "description": "Percentage position of the close relative to the day's high. Values near 100% mean buyers dominated through the close.", "formula": "(Close - Low) / (High - Low) × 100" },
+        { "id": "close_near_day_low", "label": "Close Near Day Low", "type": "number", "unit": "%", "description": "Percentage proximity of the close to the day's low. Values near 100% mean sellers pushed the close to its lowest point.", "formula": "(High - Close) / (High - Low) × 100" },
+        { "id": "volume_price_trend", "label": "Volume Price Trend", "type": "number", "description": "Cumulative sum of volume multiplied by price change percentage. Rising VPT confirms price trend is backed by volume.", "formula": "Cumulative Sum of Volume × (Close / Close[prev] - 1)" },
+        { "id": "price_volume_confirmation_score", "label": "Confirmation Score", "type": "number", "description": "Composite score measuring how well volume confirms recent price moves. Higher scores mean price action has strong volume support.", "formula": "Weighted(UpVolumeRatio, ClosePosition, VolumeOnBreakouts)" }
+      ]
+    },
+    {
+      "id": "liquidity",
+      "label": "Liquidity",
+      "description": "Dollar volume, spread, turnover",
+      "indicators": [
+        { "id": "average_volume_20d", "label": "Avg Volume 20D", "type": "number", "description": "Average number of shares traded daily over 20 days. Used to ensure the stock has enough trading activity for entries and exits.", "formula": "Average(Volume[1..20])" },
+        { "id": "average_volume_50d", "label": "Avg Volume 50D", "type": "number", "description": "Average number of shares traded daily over 50 days. A smoothed measure of typical share trading activity.", "formula": "Average(Volume[1..50])" },
+        { "id": "average_dollar_volume_20d", "label": "Avg ₹ Volume 20D", "type": "number", "unit": "₹", "description": "Average daily rupee turnover over 20 days. Ensures the stock can absorb meaningful position sizes without moving the price.", "formula": "Average(Close × Volume, 20 days)" },
+        { "id": "average_dollar_volume_50d", "label": "Avg ₹ Volume 50D", "type": "number", "unit": "₹", "description": "Average daily rupee turnover over 50 days. A longer-window liquidity measure for position sizing.", "formula": "Average(Close × Volume, 50 days)" },
+        { "id": "average_dollar_volume_120d", "label": "Avg ₹ Volume 120D", "type": "number", "unit": "₹", "description": "Average daily rupee turnover over 120 days. Smooths out seasonal volume effects for a stable liquidity view.", "formula": "Average(Close × Volume, 120 days)" },
+        { "id": "bid_ask_spread", "label": "Bid-Ask Spread", "type": "number", "unit": "₹", "description": "Absolute difference between the best bid and best ask price. Lower spread means cheaper execution for traders.", "formula": "AskPrice - BidPrice" },
+        { "id": "bid_ask_spread_percentage", "label": "Bid-Ask Spread %", "type": "number", "unit": "%", "description": "Bid-ask spread as a percentage of the mid price. A key cost metric; lower values indicate more liquid, cheaper-to-trade stocks.", "formula": "(Ask - Bid) / MidPrice × 100" },
+        { "id": "liquidity_percentile", "label": "Liquidity Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this stock's liquidity among all stocks in the universe. Higher means easier to trade with less market impact.", "formula": "Percentile(DollarVolume, Universe)" },
+        { "id": "turnover_ratio", "label": "Turnover Ratio", "type": "number", "description": "Daily volume divided by shares outstanding. Measures how actively the float is being traded; higher ratios indicate speculative interest.", "formula": "Volume / SharesOutstanding" }
+      ]
+    },
+    {
+      "id": "volatility",
+      "label": "Volatility",
+      "description": "ATR, historical volatility, expansion/contraction",
+      "indicators": [
+        { "id": "atr_14", "label": "ATR 14", "type": "number", "unit": "₹", "description": "Average True Range over 14 periods. Measures typical daily price movement in rupees, used for stop-loss placement and position sizing.", "formula": "Average(TrueRange, 14) where TR = Max(H-L, |H-C[prev]|, |L-C[prev]|)" },
+        { "id": "atr_20", "label": "ATR 20", "type": "number", "unit": "₹", "description": "Average True Range over 20 periods. A smoother volatility measure aligned with the monthly trading cycle.", "formula": "Average(TrueRange, 20)" },
+        { "id": "atr_50", "label": "ATR 50", "type": "number", "unit": "₹", "description": "Average True Range over 50 periods. Long-term baseline volatility for setting wider stops and targets.", "formula": "Average(TrueRange, 50)" },
+        { "id": "atr_percentage", "label": "ATR %", "type": "number", "unit": "%", "description": "ATR as a percentage of the current price. Normalizes volatility across stocks, enabling comparison between high- and low-priced names.", "formula": "ATR_14 / Close × 100" },
+        { "id": "historical_volatility_5d", "label": "HV 5D", "type": "number", "unit": "%", "description": "Annualized standard deviation of daily returns over 5 days. Captures the most recent spike or calm in volatility.", "formula": "StdDev(DailyReturns, 5) × √252 × 100" },
+        { "id": "historical_volatility_10d", "label": "HV 10D", "type": "number", "unit": "%", "description": "Annualized standard deviation of daily returns over 10 days. Bridges ultra-short and short-term volatility.", "formula": "StdDev(DailyReturns, 10) × √252 × 100" },
+        { "id": "historical_volatility_20d", "label": "HV 20D", "type": "number", "unit": "%", "description": "Annualized standard deviation of daily returns over 20 days. The standard short-term volatility measure for options and risk management.", "formula": "StdDev(DailyReturns, 20) × √252 × 100" },
+        { "id": "historical_volatility_60d", "label": "HV 60D", "type": "number", "unit": "%", "description": "Annualized standard deviation of daily returns over 60 days. Captures the typical quarterly volatility regime.", "formula": "StdDev(DailyReturns, 60) × √252 × 100" },
+        { "id": "historical_volatility_120d", "label": "HV 120D", "type": "number", "unit": "%", "description": "Annualized standard deviation of daily returns over 120 days. A stable half-year volatility baseline.", "formula": "StdDev(DailyReturns, 120) × √252 × 100" },
+        { "id": "volatility_expansion", "label": "Volatility Expansion", "type": "boolean", "description": "True when short-term volatility is significantly above its longer-term average. Signals increased risk and potential trend acceleration.", "formula": "HV_10D > 1.5 × HV_60D" },
+        { "id": "volatility_contraction", "label": "Volatility Contraction", "type": "boolean", "description": "True when short-term volatility is significantly below its longer-term average. Often precedes a breakout (squeeze setup).", "formula": "HV_10D < 0.5 × HV_60D" },
+        { "id": "atr_14_vs_atr_50", "label": "ATR14 vs ATR50", "type": "number", "description": "Ratio of 14-day ATR to 50-day ATR. Values above 1 indicate expanding volatility; below 1 indicates contraction.", "formula": "ATR_14 / ATR_50" },
+        { "id": "atr_slope", "label": "ATR Slope", "type": "number", "description": "Rate of change of the ATR over recent periods. Rising ATR slope warns of increasing volatility ahead.", "formula": "LinearSlope(ATR_14, 10)" },
+        { "id": "volatility_percentile", "label": "Volatility Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this stock's volatility among all stocks in the universe. Helps compare how volatile this stock is relative to peers.", "formula": "Percentile(HV_20D, Universe)" },
+        { "id": "volatility_zscore", "label": "Volatility Z-Score", "type": "number", "description": "Current volatility expressed as standard deviations from its own mean. Values above 2 indicate abnormally elevated volatility.", "formula": "(HV_20D - Mean(HV_20D, 252)) / StdDev(HV_20D, 252)" },
+        { "id": "relative_volatility", "label": "Relative Volatility", "type": "number", "description": "Stock's volatility divided by the market (Nifty) volatility. Values above 1 mean the stock is more volatile than the index.", "formula": "HV_20D(Stock) / HV_20D(Nifty)" },
+        { "id": "relative_atr", "label": "Relative ATR", "type": "number", "description": "Stock's ATR percentage divided by the market ATR percentage. Normalizes volatility comparison vs the index.", "formula": "ATR%(Stock) / ATR%(Nifty)" },
+        { "id": "relative_volatility_percentile", "label": "Rel Vol Percentile", "type": "number", "unit": "%", "description": "Percentile rank of the stock's relative volatility across the universe. Shows where this stock's market-relative risk stands vs all peers.", "formula": "Percentile(RelativeVolatility, Universe)" }
+      ]
+    },
+    {
+      "id": "bollinger",
+      "label": "Bollinger Bands",
+      "description": "BB width, %B, squeeze/expansion",
+      "indicators": [
+        { "id": "bb_middle", "label": "BB Middle", "type": "number", "unit": "₹", "description": "Middle Bollinger Band, which is the 20-day simple moving average. Acts as the mean-reversion center for the bands.", "formula": "SMA(Close, 20)" },
+        { "id": "bb_upper", "label": "BB Upper", "type": "number", "unit": "₹", "description": "Upper Bollinger Band, 2 standard deviations above the middle band. Price touching or exceeding it suggests overextension.", "formula": "SMA(Close, 20) + 2 × StdDev(Close, 20)" },
+        { "id": "bb_lower", "label": "BB Lower", "type": "number", "unit": "₹", "description": "Lower Bollinger Band, 2 standard deviations below the middle band. Price touching it may signal oversold conditions.", "formula": "SMA(Close, 20) - 2 × StdDev(Close, 20)" },
+        { "id": "bb_width", "label": "BB Width", "type": "number", "unit": "%", "description": "Width of the Bollinger Bands as a percentage of the middle band. Narrow width indicates low volatility (squeeze); wide indicates high volatility.", "formula": "(BB_Upper - BB_Lower) / BB_Middle × 100" },
+        { "id": "bb_width_percentile", "label": "BB Width Percentile", "type": "number", "unit": "%", "description": "Percentile rank of current BB width in the stock's own history. Low percentiles signal a squeeze that often precedes a big move.", "formula": "Percentile(BB_Width, own history 252 days)" },
+        { "id": "bb_percent_b", "label": "%B", "type": "number", "description": "Position of price within the Bollinger Bands, from 0 (lower band) to 1 (upper band). Values above 1 or below 0 indicate a breakout beyond the bands.", "formula": "(Close - BB_Lower) / (BB_Upper - BB_Lower)" },
+        { "id": "bb_squeeze", "label": "BB Squeeze", "type": "boolean", "description": "True when BB width is at a historically low level. Squeezes often precede explosive directional moves.", "formula": "BB_Width_Percentile < 20" },
+        { "id": "bb_expansion", "label": "BB Expansion", "type": "boolean", "description": "True when BB width is expanding rapidly from a squeeze. Signals the start of a new trending move.", "formula": "BB_Width > 1.5 × BB_Width[5 days ago] AND BB_Squeeze[recent]" },
+        { "id": "price_above_upper_band", "label": "Above Upper Band", "type": "boolean", "description": "True when the close is above the upper Bollinger Band. In momentum, this signals trend strength rather than automatic reversal.", "formula": "Close > BB_Upper" },
+        { "id": "price_below_lower_band", "label": "Below Lower Band", "type": "boolean", "description": "True when the close is below the lower Bollinger Band. Can signal oversold conditions or a breakdown.", "formula": "Close < BB_Lower" }
+      ]
+    },
+    {
+      "id": "trend_quality",
+      "label": "Trend Quality",
+      "description": "Efficiency ratio, regression, consistency",
+      "indicators": [
+        { "id": "efficiency_ratio_10d", "label": "Efficiency Ratio 10D", "type": "number", "description": "Net price change divided by the sum of absolute daily changes over 10 days. Values near 1 mean a clean, straight trend; near 0 means choppy.", "formula": "|Close - Close[10 ago]| / Sum(|Close[i] - Close[i-1]|, 10)" },
+        { "id": "efficiency_ratio_20d", "label": "Efficiency Ratio 20D", "type": "number", "description": "Net price change divided by the sum of absolute daily changes over 20 days. Measures how efficiently price moved in one direction.", "formula": "|Close - Close[20 ago]| / Sum(|Close[i] - Close[i-1]|, 20)" },
+        { "id": "efficiency_ratio_50d", "label": "Efficiency Ratio 50D", "type": "number", "description": "Net price change divided by the sum of absolute daily changes over 50 days. Long-window trend efficiency measure.", "formula": "|Close - Close[50 ago]| / Sum(|Close[i] - Close[i-1]|, 50)" },
+        { "id": "linear_regression_slope_10d", "label": "LR Slope 10D", "type": "number", "description": "Slope of the linear regression line fitted to the last 10 closing prices. Positive slope confirms an upward short-term trajectory.", "formula": "LinearRegression(Close[1..10]).slope" },
+        { "id": "linear_regression_slope_20d", "label": "LR Slope 20D", "type": "number", "description": "Slope of the linear regression line fitted to the last 20 closing prices. Shows the direction and steepness of the monthly trend.", "formula": "LinearRegression(Close[1..20]).slope" },
+        { "id": "linear_regression_slope_50d", "label": "LR Slope 50D", "type": "number", "description": "Slope of the linear regression line fitted to the last 50 closing prices. Captures intermediate trend direction and steepness.", "formula": "LinearRegression(Close[1..50]).slope" },
+        { "id": "linear_regression_r2_20d", "label": "LR R² 20D", "type": "number", "description": "R-squared of the 20-day linear regression. Values near 1 mean price follows a straight-line trend with minimal noise.", "formula": "R²(LinearRegression(Close[1..20]))" },
+        { "id": "linear_regression_r2_50d", "label": "LR R² 50D", "type": "number", "description": "R-squared of the 50-day linear regression. High R² over 50 days signals a persistent, low-noise trend.", "formula": "R²(LinearRegression(Close[1..50]))" },
+        { "id": "trend_t_stat", "label": "Trend T-Stat", "type": "number", "description": "T-statistic of the regression slope, measuring statistical significance of the trend. Values above 2 indicate a statistically significant trend.", "formula": "Slope / StandardError(Slope)" },
+        { "id": "positive_days_5d", "label": "Positive Days 5D", "type": "number", "description": "Count of days with positive returns out of the last 5. High counts suggest consistent buying pressure.", "formula": "Count(Close > Close[prev], last 5 days)" },
+        { "id": "positive_days_10d", "label": "Positive Days 10D", "type": "number", "description": "Count of days with positive returns out of the last 10. Measures two-week trend consistency.", "formula": "Count(Close > Close[prev], last 10 days)" },
+        { "id": "positive_days_20d", "label": "Positive Days 20D", "type": "number", "description": "Count of days with positive returns out of the last 20. Shows the proportion of winning days over a month.", "formula": "Count(Close > Close[prev], last 20 days)" },
+        { "id": "positive_days_50d", "label": "Positive Days 50D", "type": "number", "description": "Count of days with positive returns out of the last 50. A broader measure of trend persistence.", "formula": "Count(Close > Close[prev], last 50 days)" },
+        { "id": "up_days_ratio_10d", "label": "Up Days Ratio 10D", "type": "number", "unit": "%", "description": "Percentage of up days in the last 10 trading days. Values above 60% suggest bullish trend consistency.", "formula": "PositiveDays_10D / 10 × 100" },
+        { "id": "up_days_ratio_20d", "label": "Up Days Ratio 20D", "type": "number", "unit": "%", "description": "Percentage of up days in the last 20 trading days. Measures monthly win rate of the stock.", "formula": "PositiveDays_20D / 20 × 100" },
+        { "id": "up_days_ratio_50d", "label": "Up Days Ratio 50D", "type": "number", "unit": "%", "description": "Percentage of up days in the last 50 trading days. A broader consistency metric for the intermediate trend.", "formula": "PositiveDays_50D / 50 × 100" }
+      ]
+    },
+    {
+      "id": "drawdown",
+      "label": "Drawdown",
+      "description": "Current and max drawdown, recovery",
+      "indicators": [
+        { "id": "drawdown_from_20d_high", "label": "DD from 20D High", "type": "number", "unit": "%", "description": "Percentage decline from the 20-day high. Shows current short-term pain level relative to recent peak.", "formula": "(Close / Max(High[1..20]) - 1) × 100" },
+        { "id": "drawdown_from_50d_high", "label": "DD from 50D High", "type": "number", "unit": "%", "description": "Percentage decline from the 50-day high. Measures intermediate-term drawdown.", "formula": "(Close / Max(High[1..50]) - 1) × 100" },
+        { "id": "drawdown_from_100d_high", "label": "DD from 100D High", "type": "number", "unit": "%", "description": "Percentage decline from the 100-day high. A broader drawdown measure for position management.", "formula": "(Close / Max(High[1..100]) - 1) × 100" },
+        { "id": "drawdown_from_200d_high", "label": "DD from 200D High", "type": "number", "unit": "%", "description": "Percentage decline from the 200-day high. Shows the full extent of the long-term pullback.", "formula": "(Close / Max(High[1..200]) - 1) × 100" },
+        { "id": "drawdown_from_52w_high", "label": "DD from 52W High", "type": "number", "unit": "%", "description": "Percentage decline from the 52-week high. The standard measure of how far a stock has fallen from its annual peak.", "formula": "(Close / Max(High[1..252]) - 1) × 100" },
+        { "id": "max_drawdown_20d", "label": "Max DD 20D", "type": "number", "unit": "%", "description": "Largest peak-to-trough decline within the last 20 days. Measures worst-case short-term loss.", "formula": "Max peak-to-trough decline within last 20 days" },
+        { "id": "max_drawdown_60d", "label": "Max DD 60D", "type": "number", "unit": "%", "description": "Largest peak-to-trough decline within the last 60 days. Shows worst quarterly drawdown experience.", "formula": "Max peak-to-trough decline within last 60 days" },
+        { "id": "max_drawdown_120d", "label": "Max DD 120D", "type": "number", "unit": "%", "description": "Largest peak-to-trough decline within the last 120 days. Captures the worst half-year drawdown.", "formula": "Max peak-to-trough decline within last 120 days" },
+        { "id": "recovery_from_drawdown", "label": "Recovery from DD", "type": "number", "unit": "%", "description": "Percentage recovery from the most recent drawdown trough. Shows how much of the loss has been recouped.", "formula": "(Close / DrawdownTrough - 1) × 100" },
+        { "id": "drawdown_duration", "label": "DD Duration", "type": "number", "unit": "days", "description": "Number of trading days since the stock last made a new high. Longer durations indicate a struggling recovery.", "formula": "Days since last all-time or period high" }
+      ]
+    },
+    {
+      "id": "pullback_quality",
+      "label": "Pullback Quality",
+      "description": "Pullback depth, duration, recovery characteristics",
+      "indicators": [
+        { "id": "distance_from_ema20", "label": "Distance from EMA20", "type": "number", "unit": "%", "description": "Percentage distance of price from the 20-day EMA. Traders use this to spot stocks pulling back to their short-term mean.", "formula": "(Close / EMA_20 - 1) × 100" },
+        { "id": "distance_from_ema50", "label": "Distance from EMA50", "type": "number", "unit": "%", "description": "Percentage distance of price from the 50-day EMA. Identifies pullbacks to the intermediate-term trend.", "formula": "(Close / EMA_50 - 1) × 100" },
+        { "id": "pullback_depth", "label": "Pullback Depth", "type": "number", "unit": "%", "description": "Maximum percentage decline from the recent swing high to the pullback low. Shallower pullbacks in uptrends are healthier.", "formula": "(PullbackLow / SwingHigh - 1) × 100" },
+        { "id": "pullback_duration", "label": "Pullback Duration", "type": "number", "unit": "days", "description": "Number of trading days from the swing high to the pullback low. Shorter pullback durations suggest eager buyers.", "formula": "Days from SwingHigh to PullbackLow" },
+        { "id": "recovery_speed", "label": "Recovery Speed", "type": "number", "description": "Rate at which price recovered from the pullback low, measured as return per day. Faster recovery indicates stronger demand.", "formula": "Recovery% / DaysSincePullbackLow" },
+        { "id": "pullback_volume_contraction", "label": "PB Volume Contraction", "type": "number", "description": "Ratio of average volume during the pullback to volume during the prior advance. Low ratios (volume drying up) confirm a healthy pullback.", "formula": "Avg(Volume during pullback) / Avg(Volume during advance)" },
+        { "id": "pullback_to_atr_ratio", "label": "PB to ATR Ratio", "type": "number", "description": "Pullback depth divided by ATR. Normalizes pullback severity; values under 2 suggest a controlled, normal retracement.", "formula": "PullbackDepth / ATR_14" },
+        { "id": "pullback_hold_ema20", "label": "PB Hold EMA20", "type": "boolean", "description": "True when the pullback low held above the 20-day EMA. Signals that the short-term trend support was respected.", "formula": "PullbackLow > EMA_20" },
+        { "id": "pullback_hold_ema50", "label": "PB Hold EMA50", "type": "boolean", "description": "True when the pullback low held above the 50-day EMA. Confirms the intermediate trend remains intact.", "formula": "PullbackLow > EMA_50" },
+        { "id": "pullback_recovery_strength", "label": "PB Recovery Strength", "type": "number", "description": "Composite score of recovery velocity, volume on recovery, and candle quality. Higher values mean a more convincing recovery from the pullback.", "formula": "Weighted(RecoverySpeed, RecoveryVolume, CandleQuality)" }
+      ]
+    },
+    {
+      "id": "momentum_indicators",
+      "label": "Momentum Indicators",
+      "description": "RSI, MACD, ADX",
+      "indicators": [
+        { "id": "rsi_7", "label": "RSI 7", "type": "number", "description": "Relative Strength Index over 7 periods. A fast oscillator for short-term overbought/oversold signals.", "formula": "100 - 100 / (1 + AvgGain(7) / AvgLoss(7))" },
+        { "id": "rsi_14", "label": "RSI 14", "type": "number", "description": "Relative Strength Index over 14 periods. Values above 70 indicate overbought, below 30 oversold. Used to identify momentum extremes and potential reversals.", "formula": "100 - 100 / (1 + AvgGain(14) / AvgLoss(14))" },
+        { "id": "rsi_21", "label": "RSI 21", "type": "number", "description": "Relative Strength Index over 21 periods. A smoother RSI that filters out short-term noise for medium-term signals.", "formula": "100 - 100 / (1 + AvgGain(21) / AvgLoss(21))" },
+        { "id": "rsi_slope", "label": "RSI Slope", "type": "number", "description": "Rate of change of the RSI. A rising RSI slope confirms accelerating momentum; falling slope warns of deceleration.", "formula": "LinearSlope(RSI_14, 5)" },
+        { "id": "rsi_change_5d", "label": "RSI Change 5D", "type": "number", "description": "Change in RSI over the last 5 days. Large positive changes indicate rapidly improving momentum.", "formula": "RSI_14(today) - RSI_14(5 days ago)" },
+        { "id": "rsi_change_10d", "label": "RSI Change 10D", "type": "number", "description": "Change in RSI over the last 10 days. Tracks momentum shift over a two-week window.", "formula": "RSI_14(today) - RSI_14(10 days ago)" },
+        { "id": "rsi_above_50", "label": "RSI > 50", "type": "boolean", "description": "True when RSI is above 50, indicating bullish momentum. The simplest RSI trend filter.", "formula": "RSI_14 > 50" },
+        { "id": "rsi_above_60", "label": "RSI > 60", "type": "boolean", "description": "True when RSI is above 60, indicating moderately strong bullish momentum.", "formula": "RSI_14 > 60" },
+        { "id": "rsi_above_70", "label": "RSI > 70", "type": "boolean", "description": "True when RSI is above 70, the classic overbought threshold. In strong trends this signals strength, not reversal.", "formula": "RSI_14 > 70" },
+        { "id": "rsi_persistence_above_60", "label": "RSI Persist > 60", "type": "number", "unit": "days", "description": "Consecutive days RSI has stayed above 60. Longer persistence confirms sustained strong momentum, typical in trending stocks.", "formula": "Consecutive days where RSI_14 > 60" },
+        { "id": "rsi_persistence_above_70", "label": "RSI Persist > 70", "type": "number", "unit": "days", "description": "Consecutive days RSI has stayed above 70. Extended persistence above 70 is characteristic of powerful trending moves.", "formula": "Consecutive days where RSI_14 > 70" },
+        { "id": "rsi_percentile", "label": "RSI Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this stock's RSI among all stocks in the universe. Shows relative momentum standing vs all peers.", "formula": "Percentile(RSI_14, Universe)" },
+        { "id": "macd", "label": "MACD", "type": "number", "description": "Moving Average Convergence Divergence line. Positive MACD confirms short-term momentum exceeds longer-term momentum.", "formula": "EMA(Close, 12) - EMA(Close, 26)" },
+        { "id": "macd_signal", "label": "MACD Signal", "type": "number", "description": "9-period EMA of the MACD line. Crossovers of MACD above its signal line generate buy signals.", "formula": "EMA(MACD, 9)" },
+        { "id": "macd_histogram", "label": "MACD Histogram", "type": "number", "description": "Difference between MACD and its signal line. Positive and growing histogram confirms accelerating momentum.", "formula": "MACD - Signal" },
+        { "id": "macd_histogram_slope", "label": "MACD Hist Slope", "type": "number", "description": "Rate of change of the MACD histogram. Tracks whether momentum acceleration is speeding up or slowing down.", "formula": "LinearSlope(MACD_Histogram, 5)" },
+        { "id": "macd_histogram_change", "label": "MACD Hist Change", "type": "number", "description": "Change in MACD histogram from the prior bar. Positive changes mean momentum is accelerating.", "formula": "MACD_Histogram(today) - MACD_Histogram(yesterday)" },
+        { "id": "macd_above_zero", "label": "MACD > 0", "type": "boolean", "description": "True when MACD is above zero, confirming that short-term trend momentum is bullish.", "formula": "MACD > 0" },
+        { "id": "macd_bullish_crossover", "label": "MACD Bull Crossover", "type": "boolean", "description": "True when MACD crosses above its signal line. A classic buy signal indicating momentum is turning positive.", "formula": "MACD > Signal AND MACD[prev] <= Signal[prev]" },
+        { "id": "adx_14", "label": "ADX 14", "type": "number", "description": "Average Directional Index over 14 periods. Measures trend strength regardless of direction. Values above 25 indicate a strong trend.", "formula": "Average(DX, 14) where DX = |DI+ - DI-| / (DI+ + DI-) × 100" },
+        { "id": "adx_20", "label": "ADX 20", "type": "number", "description": "Average Directional Index over 20 periods. A smoother trend strength measure with fewer false signals.", "formula": "Average(DX, 20)" },
+        { "id": "di_plus", "label": "DI+", "type": "number", "description": "Positive Directional Indicator. Measures upward price movement strength. DI+ above DI- confirms bullish trend direction.", "formula": "Smoothed(+DM, 14) / ATR_14 × 100" },
+        { "id": "di_minus", "label": "DI-", "type": "number", "description": "Negative Directional Indicator. Measures downward price movement strength. DI- above DI+ confirms bearish trend direction.", "formula": "Smoothed(-DM, 14) / ATR_14 × 100" },
+        { "id": "di_difference", "label": "DI Difference", "type": "number", "description": "DI+ minus DI-. Positive values confirm bullish dominance; larger values mean stronger directional bias.", "formula": "DI+ - DI-" },
+        { "id": "adx_slope", "label": "ADX Slope", "type": "number", "description": "Rate of change of ADX. Rising ADX slope means the trend is gaining strength; falling means it is weakening.", "formula": "LinearSlope(ADX_14, 5)" }
+      ]
+    },
+    {
+      "id": "price_action",
+      "label": "Price Action",
+      "description": "Candle analysis, body/wick ratios, close position",
+      "indicators": [
+        { "id": "body_size", "label": "Body Size", "type": "number", "unit": "%", "description": "Absolute difference between open and close as a percentage of the open. Larger bodies indicate stronger conviction in the day's direction.", "formula": "|Close - Open| / Open × 100" },
+        { "id": "upper_wick", "label": "Upper Wick", "type": "number", "unit": "%", "description": "Length of the upper wick as a percentage of the candle range. Long upper wicks indicate rejection at higher prices.", "formula": "(High - Max(Open, Close)) / (High - Low) × 100" },
+        { "id": "lower_wick", "label": "Lower Wick", "type": "number", "unit": "%", "description": "Length of the lower wick as a percentage of the candle range. Long lower wicks indicate buying support at lower prices.", "formula": "(Min(Open, Close) - Low) / (High - Low) × 100" },
+        { "id": "candle_range", "label": "Candle Range", "type": "number", "unit": "₹", "description": "Total high-to-low range of the candle in rupees. Measures the day's total price excursion.", "formula": "High - Low" },
+        { "id": "body_to_range", "label": "Body to Range", "type": "number", "unit": "%", "description": "Candle body size as a percentage of the total range. High values mean the body dominated the move (conviction); low values suggest indecision.", "formula": "|Close - Open| / (High - Low) × 100" },
+        { "id": "close_position", "label": "Close Position", "type": "number", "unit": "%", "description": "Position of the close within the day's range. Values near 100% mean close at the high (bullish); near 0% at the low (bearish).", "formula": "(Close - Low) / (High - Low) × 100" },
+        { "id": "positive_close_ratio_5d", "label": "Pos Close Ratio 5D", "type": "number", "unit": "%", "description": "Percentage of the last 5 days where close was in the upper half of the daily range. Measures short-term buying dominance.", "formula": "Count(ClosePosition > 50%, 5) / 5 × 100" },
+        { "id": "positive_close_ratio_10d", "label": "Pos Close Ratio 10D", "type": "number", "unit": "%", "description": "Percentage of the last 10 days where close was in the upper half of the range. Two-week buying dominance measure.", "formula": "Count(ClosePosition > 50%, 10) / 10 × 100" },
+        { "id": "positive_close_ratio_20d", "label": "Pos Close Ratio 20D", "type": "number", "unit": "%", "description": "Percentage of the last 20 days where close was in the upper half of the range. Monthly buying dominance measure.", "formula": "Count(ClosePosition > 50%, 20) / 20 × 100" },
+        { "id": "average_body_5d", "label": "Avg Body 5D", "type": "number", "unit": "%", "description": "Average candle body size over the last 5 days. Increasing average body sizes signal growing conviction.", "formula": "Average(|Close - Open| / Open × 100, 5)" },
+        { "id": "average_range_5d", "label": "Avg Range 5D", "type": "number", "unit": "₹", "description": "Average daily high-low range over 5 days. A short-term measure of daily price volatility.", "formula": "Average(High - Low, 5)" },
+        { "id": "average_range_20d", "label": "Avg Range 20D", "type": "number", "unit": "₹", "description": "Average daily high-low range over 20 days. The baseline for what constitutes a normal day's price movement.", "formula": "Average(High - Low, 20)" },
+        { "id": "bullish_candle_ratio", "label": "Bullish Candle Ratio", "type": "number", "unit": "%", "description": "Percentage of candles with close above open over the lookback period. Higher ratios confirm bullish price action dominance.", "formula": "Count(Close > Open, N) / N × 100" },
+        { "id": "bearish_candle_ratio", "label": "Bearish Candle Ratio", "type": "number", "unit": "%", "description": "Percentage of candles with close below open over the lookback period. Higher ratios indicate persistent selling pressure.", "formula": "Count(Close < Open, N) / N × 100" }
+      ]
+    },
+    {
+      "id": "gap_momentum",
+      "label": "Gap Momentum",
+      "description": "Gap frequency, hold/fill rates, volume",
+      "indicators": [
+        { "id": "gap_up_percentage", "label": "Gap Up %", "type": "number", "unit": "%", "description": "Today's gap-up size as a percentage. Calculated from prior close to today's open. Larger gaps signal overnight demand.", "formula": "(Open / Close[prev] - 1) × 100, when Open > Close[prev]" },
+        { "id": "gap_down_percentage", "label": "Gap Down %", "type": "number", "unit": "%", "description": "Today's gap-down size as a percentage. Larger gap-downs signal overnight selling pressure or negative news.", "formula": "(Open / Close[prev] - 1) × 100, when Open < Close[prev]" },
+        { "id": "gap_frequency", "label": "Gap Frequency", "type": "number", "description": "Number of significant gaps (above a threshold) over the recent period. Frequent gaps indicate volatile, news-driven price action.", "formula": "Count of gaps > 1% in last 20 days" },
+        { "id": "gap_hold_rate", "label": "Gap Hold Rate", "type": "number", "unit": "%", "description": "Percentage of gap-ups where the gap was not filled during the session. High hold rates suggest strong follow-through demand.", "formula": "GapsHeld / TotalGapUps × 100" },
+        { "id": "gap_fill_rate", "label": "Gap Fill Rate", "type": "number", "unit": "%", "description": "Percentage of gaps that were filled (price returned to prior close) during the session. High fill rates warn of weak gap conviction.", "formula": "GapsFilled / TotalGaps × 100" },
+        { "id": "gap_up_high_volume", "label": "Gap Up High Volume", "type": "boolean", "description": "True when a gap-up occurred on above-average volume. Confirms institutional interest behind the gap.", "formula": "GapUp AND Volume > 1.5 × Avg(Volume, 20)" },
+        { "id": "gap_up_close_near_high", "label": "Gap Up Close Near High", "type": "boolean", "description": "True when a gap-up day closed near its high. Shows buyers maintained control all day after the gap, a powerful momentum signal.", "formula": "GapUp AND (Close - Low) / (High - Low) > 0.8" },
+        { "id": "gap_vs_atr", "label": "Gap vs ATR", "type": "number", "description": "Gap size normalized by ATR. Large values relative to ATR indicate an unusual, potentially significant overnight move.", "formula": "|Gap| / ATR_14" },
+        { "id": "gap_volume_ratio", "label": "Gap Volume Ratio", "type": "number", "description": "Volume on the gap day divided by average volume. Measures how much conviction accompanied the gap.", "formula": "Volume(gap day) / Avg(Volume, 20)" }
+      ]
+    },
+    {
+      "id": "vwap",
+      "label": "VWAP",
+      "description": "VWAP and anchored VWAP levels",
+      "indicators": [
+        { "id": "vwap", "label": "VWAP", "type": "number", "unit": "₹", "description": "Volume-Weighted Average Price for the session. The benchmark price where most volume traded; institutional traders use it to gauge execution quality.", "formula": "Cumulative(Price × Volume) / Cumulative(Volume)" },
+        { "id": "price_vs_vwap", "label": "Price vs VWAP", "type": "number", "unit": "%", "description": "Percentage difference between current price and VWAP. Positive means price is above the volume-weighted mean (buyers in control).", "formula": "(Close / VWAP - 1) × 100" },
+        { "id": "vwap_distance", "label": "VWAP Distance", "type": "number", "unit": "%", "description": "Absolute percentage distance from VWAP. Larger values mean price has deviated significantly from the session's fair value.", "formula": "|Close / VWAP - 1| × 100" },
+        { "id": "vwap_slope", "label": "VWAP Slope", "type": "number", "description": "Direction and steepness of the VWAP line. A rising VWAP confirms that buying volume is occurring at progressively higher prices.", "formula": "LinearSlope(VWAP, recent bars)" },
+        { "id": "price_above_vwap", "label": "Price Above VWAP", "type": "boolean", "description": "True when current price is above VWAP. Price holding above VWAP indicates bullish intraday sentiment.", "formula": "Close > VWAP" },
+        { "id": "anchored_vwap_20d", "label": "Anchored VWAP 20D", "type": "number", "unit": "₹", "description": "VWAP anchored to the price 20 days ago. Shows the average cost basis of all trades over the last month.", "formula": "Sum(Price × Volume, 20 days) / Sum(Volume, 20 days)" },
+        { "id": "anchored_vwap_50d", "label": "Anchored VWAP 50D", "type": "number", "unit": "₹", "description": "VWAP anchored to the price 50 days ago. Reveals the intermediate-term average cost basis of participants.", "formula": "Sum(Price × Volume, 50 days) / Sum(Volume, 50 days)" },
+        { "id": "anchored_vwap_from_breakout", "label": "AVWAP from Breakout", "type": "number", "unit": "₹", "description": "VWAP anchored to the most recent breakout date. Shows the average entry price of traders who entered at the breakout.", "formula": "Sum(Price × Volume, since breakout) / Sum(Volume, since breakout)" },
+        { "id": "anchored_vwap_from_swing_low", "label": "AVWAP from Swing Low", "type": "number", "unit": "₹", "description": "VWAP anchored to the last swing low. Represents the average cost basis since the uptrend began.", "formula": "Sum(Price × Volume, since swing low) / Sum(Volume, since swing low)" },
+        { "id": "anchored_vwap_distance", "label": "AVWAP Distance", "type": "number", "unit": "%", "description": "Percentage distance from the anchored VWAP. Shows how far price has moved from the reference cost basis.", "formula": "(Close / AnchoredVWAP - 1) × 100" },
+        { "id": "vwap_reclaim", "label": "VWAP Reclaim", "type": "boolean", "description": "True when price reclaims VWAP after being below it. A bullish signal as buyers regain control of the volume-weighted mean.", "formula": "Close > VWAP AND Close[prev] < VWAP[prev]" },
+        { "id": "vwap_rejection", "label": "VWAP Rejection", "type": "boolean", "description": "True when price tests VWAP from below and gets rejected. Bearish signal confirming VWAP as overhead resistance.", "formula": "High > VWAP AND Close < VWAP" }
+      ]
+    },
+    {
+      "id": "money_flow",
+      "label": "Money Flow",
+      "description": "OBV, CMF, MFI, A/D line, force index",
+      "indicators": [
+        { "id": "obv", "label": "OBV", "type": "number", "description": "On-Balance Volume: cumulative sum of volume on up days minus volume on down days. Rising OBV confirms price trend; divergences warn of reversal.", "formula": "Cumulative: +Volume if Close > Close[prev], -Volume if Close < Close[prev]" },
+        { "id": "obv_slope", "label": "OBV Slope", "type": "number", "description": "Short-term rate of change of OBV. Positive slope confirms money is flowing into the stock.", "formula": "LinearSlope(OBV, 5)" },
+        { "id": "obv_20d_slope", "label": "OBV 20D Slope", "type": "number", "description": "20-day slope of OBV. A positive and sustained slope confirms consistent accumulation over the past month.", "formula": "LinearSlope(OBV, 20)" },
+        { "id": "cmf_20", "label": "CMF 20", "type": "number", "description": "Chaikin Money Flow over 20 periods. Positive values indicate buying pressure; negative indicates selling pressure over the past month.", "formula": "Sum(((Close-Low)-(High-Close))/(High-Low) × Vol, 20) / Sum(Vol, 20)" },
+        { "id": "cmf_50", "label": "CMF 50", "type": "number", "description": "Chaikin Money Flow over 50 periods. A smoother measure of institutional accumulation or distribution.", "formula": "Sum(((Close-Low)-(High-Close))/(High-Low) × Vol, 50) / Sum(Vol, 50)" },
+        { "id": "mfi_14", "label": "MFI 14", "type": "number", "description": "Money Flow Index over 14 periods. Like RSI but volume-weighted. Above 80 is overbought; below 20 is oversold.", "formula": "100 - 100 / (1 + PositiveMoneyFlow(14) / NegativeMoneyFlow(14))" },
+        { "id": "mfi_slope", "label": "MFI Slope", "type": "number", "description": "Rate of change of MFI. Rising slope means money flow momentum is improving.", "formula": "LinearSlope(MFI_14, 5)" },
+        { "id": "ad_line", "label": "A/D Line", "type": "number", "description": "Accumulation/Distribution line: cumulative indicator based on close location within the range and volume. Tracks whether volume flows into (accumulation) or out of (distribution) a stock.", "formula": "Cumulative((Close-Low-(High-Close))/(High-Low) × Volume)" },
+        { "id": "ad_line_slope", "label": "A/D Line Slope", "type": "number", "description": "Slope of the A/D line. Positive slope confirms accumulation; negative confirms distribution.", "formula": "LinearSlope(AD_Line, 20)" },
+        { "id": "force_index", "label": "Force Index", "type": "number", "description": "Measures the force behind price moves using price change and volume. Large positive values confirm strong buying power.", "formula": "(Close - Close[prev]) × Volume" },
+        { "id": "ease_of_movement", "label": "Ease of Movement", "type": "number", "description": "Measures how easily price moves relative to volume. High positive values mean price advances effortlessly on low volume.", "formula": "((High+Low)/2 - (High[prev]+Low[prev])/2) / (Volume / (High - Low))" },
+        { "id": "volume_price_trend", "label": "Volume Price Trend", "type": "number", "description": "Cumulative indicator that adds a portion of volume based on the direction and magnitude of the price change. Confirms whether volume supports the price direction.", "formula": "Cumulative(Volume × (Close / Close[prev] - 1))" }
+      ]
+    },
+    {
+      "id": "volume_profile",
+      "label": "Volume Profile",
+      "description": "POC, value area, volume nodes",
+      "indicators": [
+        { "id": "volume_profile", "label": "Volume Profile", "type": "number", "description": "Volume distribution across price levels. Shows where the most trading activity occurred, revealing important support and resistance zones.", "formula": "Volume at each price level over lookback period" },
+        { "id": "volume_point_of_control", "label": "POC", "type": "number", "unit": "₹", "description": "Price level with the highest traded volume (Point of Control). Acts as a magnet for price and key support/resistance.", "formula": "Price level with Max(Volume) in the profile" },
+        { "id": "price_vs_poc", "label": "Price vs POC", "type": "number", "unit": "%", "description": "Percentage distance of current price from the Point of Control. Shows proximity to the highest-volume price level.", "formula": "(Close / POC - 1) × 100" },
+        { "id": "high_volume_node_distance", "label": "HVN Distance", "type": "number", "unit": "%", "description": "Percentage distance from the nearest high-volume node. HVNs act as support/resistance where price tends to consolidate.", "formula": "(Close / NearestHVN - 1) × 100" },
+        { "id": "low_volume_node_distance", "label": "LVN Distance", "type": "number", "unit": "%", "description": "Percentage distance from the nearest low-volume node. LVNs are zones price moves through quickly -- potential breakout/breakdown areas.", "formula": "(Close / NearestLVN - 1) × 100" },
+        { "id": "volume_concentration", "label": "Volume Concentration", "type": "number", "description": "Measures how concentrated volume is around the POC. High concentration means a tight value area; low means dispersed trading.", "formula": "Volume in ValueArea / TotalVolume" },
+        { "id": "volume_distribution_skew", "label": "Volume Dist Skew", "type": "number", "description": "Skewness of the volume distribution across price levels. Positive skew means more volume at lower prices (accumulation); negative means distribution at highs.", "formula": "Skewness(Volume by price level)" }
+      ]
+    },
+    {
+      "id": "statistical_momentum",
+      "label": "Statistical Momentum",
+      "description": "Z-scores and percentiles for returns/momentum",
+      "indicators": [
+        { "id": "return_zscore_5d", "label": "Return Z-Score 5D", "type": "number", "description": "5-day return expressed in standard deviations from its historical mean. Values above 2 indicate statistically unusual positive returns.", "formula": "(Return_5D - Mean(Return_5D, 252)) / StdDev(Return_5D, 252)" },
+        { "id": "return_zscore_20d", "label": "Return Z-Score 20D", "type": "number", "description": "20-day return expressed in standard deviations from its historical mean. Identifies statistically significant monthly moves.", "formula": "(Return_20D - Mean(Return_20D, 252)) / StdDev(Return_20D, 252)" },
+        { "id": "return_zscore_60d", "label": "Return Z-Score 60D", "type": "number", "description": "60-day return expressed in standard deviations from its historical mean. Flags abnormally large quarterly moves.", "formula": "(Return_60D - Mean(Return_60D, 252)) / StdDev(Return_60D, 252)" },
+        { "id": "price_zscore_20d", "label": "Price Z-Score 20D", "type": "number", "description": "Current price expressed as standard deviations from the 20-day mean. Shows how extended price is from its short-term average.", "formula": "(Close - Mean(Close, 20)) / StdDev(Close, 20)" },
+        { "id": "price_zscore_50d", "label": "Price Z-Score 50D", "type": "number", "description": "Current price expressed as standard deviations from the 50-day mean. Measures extension from the intermediate-term mean.", "formula": "(Close - Mean(Close, 50)) / StdDev(Close, 50)" },
+        { "id": "stat_volume_zscore", "label": "Volume Z-Score", "type": "number", "description": "Current volume expressed as standard deviations from its historical mean. Detects statistically unusual volume activity.", "formula": "(Volume - Mean(Volume, 252)) / StdDev(Volume, 252)" },
+        { "id": "stat_momentum_zscore", "label": "Momentum Z-Score", "type": "number", "description": "Composite momentum score expressed in standard deviations. Highlights stocks with statistically extreme momentum readings.", "formula": "(MomentumScore - Mean(MomentumScore, 252)) / StdDev(MomentumScore, 252)" },
+        { "id": "stat_return_percentile", "label": "Return Percentile", "type": "number", "unit": "%", "description": "Percentile rank of the current return within the stock's own return history. 95th percentile means the current return is higher than 95% of historical observations.", "formula": "Percentile(CurrentReturn, own return history)" },
+        { "id": "stat_momentum_percentile", "label": "Momentum Percentile", "type": "number", "unit": "%", "description": "Percentile rank of the current momentum score within the stock's own history. Shows whether current momentum is historically strong or weak for this stock.", "formula": "Percentile(MomentumScore, own history)" },
+        { "id": "stat_volatility_zscore", "label": "Volatility Z-Score", "type": "number", "description": "Current volatility expressed in standard deviations from its own historical mean. Values above 2 mean the stock is unusually volatile.", "formula": "(HV_20D - Mean(HV_20D, 252)) / StdDev(HV_20D, 252)" }
+      ]
+    },
+    {
+      "id": "autocorrelation",
+      "label": "Autocorrelation",
+      "description": "Return autocorrelation and sign persistence",
+      "indicators": [
+        { "id": "return_autocorrelation_5d", "label": "Autocorrelation 5D", "type": "number", "description": "Correlation between daily returns and their lagged values over 5 days. Positive values mean returns tend to persist (momentum); negative means they reverse.", "formula": "Correlation(Return[t], Return[t-1], over 5 days)" },
+        { "id": "return_autocorrelation_10d", "label": "Autocorrelation 10D", "type": "number", "description": "Correlation between daily returns and their lagged values over 10 days. Captures two-week return persistence patterns.", "formula": "Correlation(Return[t], Return[t-1], over 10 days)" },
+        { "id": "return_autocorrelation_20d", "label": "Autocorrelation 20D", "type": "number", "description": "Correlation between daily returns and their lagged values over 20 days. Higher positive values indicate a trending, momentum-friendly stock.", "formula": "Correlation(Return[t], Return[t-1], over 20 days)" },
+        { "id": "sign_autocorrelation", "label": "Sign Autocorrelation", "type": "number", "description": "Correlation of the sign (+1/-1) of returns with the prior day's sign. Measures whether up/down streaks persist more than random.", "formula": "Correlation(Sign(Return[t]), Sign(Return[t-1]), over 20 days)" }
+      ]
+    },
+    {
+      "id": "mean_reversion_risk",
+      "label": "Mean Reversion Risk",
+      "description": "Extension and reversion risk signals",
+      "indicators": [
+        { "id": "distance_from_mean", "label": "Distance from Mean", "type": "number", "unit": "%", "description": "Percentage distance of price from its rolling mean. Large positive values warn the stock may be overextended and due for a pullback.", "formula": "(Close / Mean(Close, 50) - 1) × 100" },
+        { "id": "distance_from_sma20_zscore", "label": "SMA20 Z-Score", "type": "number", "description": "Distance from SMA20 expressed in standard deviations. Values above 2 indicate the stock is statistically overextended above its 20-day mean.", "formula": "(Close - SMA_20) / StdDev(Close, 20)" },
+        { "id": "distance_from_sma50_zscore", "label": "SMA50 Z-Score", "type": "number", "description": "Distance from SMA50 expressed in standard deviations. Measures medium-term extension risk relative to the 50-day mean.", "formula": "(Close - SMA_50) / StdDev(Close, 50)" },
+        { "id": "distance_from_ema20_zscore", "label": "EMA20 Z-Score", "type": "number", "description": "Distance from EMA20 expressed in standard deviations. Uses exponential average for a more responsive extension measure.", "formula": "(Close - EMA_20) / StdDev(Close, 20)" },
+        { "id": "rsi_extreme", "label": "RSI Extreme", "type": "boolean", "description": "True when RSI is in extreme territory (above 80 or below 20). Warns of heightened mean-reversion risk at momentum extremes.", "formula": "RSI_14 > 80 OR RSI_14 < 20" },
+        { "id": "extension_score", "label": "Extension Score", "type": "number", "description": "Composite measure of how overextended the stock is, combining price distance from averages, RSI, and Bollinger Band position. Higher scores mean greater pullback risk.", "formula": "Weighted(SMA20_ZScore, RSI, BB_%B, Distance_From_Mean)" },
+        { "id": "mean_reversion_risk_score", "label": "Mean Reversion Risk", "type": "number", "description": "Overall risk score for mean reversion. Higher values warn that the current price level is unsustainable and a pullback is likely.", "formula": "Composite of extension metrics, duration at extremes, and historical reversion rates" }
+      ]
+    },
+    {
+      "id": "market_regime",
+      "label": "Market Regime",
+      "description": "Nifty returns, trend, volatility regime",
+      "indicators": [
+        { "id": "nifty_return_1d", "label": "Nifty Return 1D", "type": "number", "unit": "%", "description": "Nifty 50 index return over 1 day. Sets the market context for the trading session.", "formula": "(Nifty_Close / Nifty_Close[1 day ago] - 1) × 100" },
+        { "id": "nifty_return_5d", "label": "Nifty Return 5D", "type": "number", "unit": "%", "description": "Nifty 50 index return over 5 days. Captures the weekly market momentum.", "formula": "(Nifty_Close / Nifty_Close[5 days ago] - 1) × 100" },
+        { "id": "nifty_return_20d", "label": "Nifty Return 20D", "type": "number", "unit": "%", "description": "Nifty 50 index return over 20 days. Monthly market trend context for stock selection.", "formula": "(Nifty_Close / Nifty_Close[20 days ago] - 1) × 100" },
+        { "id": "nifty_return_50d", "label": "Nifty Return 50D", "type": "number", "unit": "%", "description": "Nifty 50 index return over 50 days. Intermediate-term market momentum for regime assessment.", "formula": "(Nifty_Close / Nifty_Close[50 days ago] - 1) × 100" },
+        { "id": "nifty_return_200d", "label": "Nifty Return 200D", "type": "number", "unit": "%", "description": "Nifty 50 index return over 200 days. Long-term market trend that defines the primary bull/bear regime.", "formula": "(Nifty_Close / Nifty_Close[200 days ago] - 1) × 100" },
+        { "id": "nifty_above_sma20", "label": "Nifty > SMA20", "type": "boolean", "description": "True when Nifty is above its 20-day SMA. Confirms the short-term market trend is bullish.", "formula": "Nifty_Close > SMA(Nifty_Close, 20)" },
+        { "id": "nifty_above_sma50", "label": "Nifty > SMA50", "type": "boolean", "description": "True when Nifty is above its 50-day SMA. Confirms the intermediate market trend is bullish.", "formula": "Nifty_Close > SMA(Nifty_Close, 50)" },
+        { "id": "nifty_above_sma200", "label": "Nifty > SMA200", "type": "boolean", "description": "True when Nifty is above its 200-day SMA. The primary long-term bull market indicator.", "formula": "Nifty_Close > SMA(Nifty_Close, 200)" },
+        { "id": "nifty_sma20_slope", "label": "Nifty SMA20 Slope", "type": "number", "description": "Slope of Nifty's 20-day SMA. Positive slope confirms the short-term market trend is rising.", "formula": "LinearSlope(SMA(Nifty_Close, 20), 5)" },
+        { "id": "nifty_sma50_slope", "label": "Nifty SMA50 Slope", "type": "number", "description": "Slope of Nifty's 50-day SMA. Positive slope confirms the intermediate market trend is rising.", "formula": "LinearSlope(SMA(Nifty_Close, 50), 5)" },
+        { "id": "nifty_sma200_slope", "label": "Nifty SMA200 Slope", "type": "number", "description": "Slope of Nifty's 200-day SMA. Positive slope confirms the primary long-term market uptrend.", "formula": "LinearSlope(SMA(Nifty_Close, 200), 5)" },
+        { "id": "nifty_adx", "label": "Nifty ADX", "type": "number", "description": "ADX of the Nifty 50 index. Measures the strength of the current market trend regardless of direction. Above 25 indicates a strong market trend.", "formula": "ADX(Nifty, 14)" },
+        { "id": "nifty_atr", "label": "Nifty ATR", "type": "number", "description": "Average True Range of the Nifty 50 index. Measures market-level volatility for regime classification.", "formula": "ATR(Nifty, 14)" },
+        { "id": "nifty_volatility", "label": "Nifty Volatility", "type": "number", "unit": "%", "description": "Annualized historical volatility of the Nifty 50. High values indicate a volatile market regime where different strategies may be needed.", "formula": "StdDev(Nifty_DailyReturns, 20) × √252 × 100" },
+        { "id": "market_regime_label", "label": "Market Regime", "type": "enum", "values": ["BULL", "NEUTRAL", "BEAR", "HIGH_VOLATILITY"], "description": "Categorical market regime classification. Determines which stock selection and risk parameters to apply.", "formula": "Based on Nifty trend, SMA positions, ADX, and volatility thresholds" }
+      ]
+    },
+    {
+      "id": "market_breadth",
+      "label": "Market Breadth",
+      "description": "Advance/decline, new highs/lows, breadth",
+      "indicators": [
+        { "id": "advance_decline_ratio", "label": "A/D Ratio", "type": "number", "description": "Number of advancing stocks divided by declining stocks. Values above 1 indicate broad market participation in an uptrend.", "formula": "AdvancingStocks / DecliningStocks" },
+        { "id": "advance_decline_line", "label": "A/D Line", "type": "number", "description": "Cumulative sum of (advances minus declines). A rising A/D line confirms that market breadth supports the index move.", "formula": "Cumulative(AdvancingStocks - DecliningStocks)" },
+        { "id": "market_breadth_score", "label": "Market Breadth", "type": "number", "description": "Composite market breadth score combining A/D, new highs/lows, and stocks above key averages. Higher scores indicate a healthier market environment.", "formula": "Weighted(AD_Ratio, NH_NL_Ratio, Pct_Above_SMAs)" },
+        { "id": "stocks_above_sma20_pct", "label": "Stocks > SMA20", "type": "number", "unit": "%", "description": "Percentage of stocks in the universe trading above their 20-day SMA. Measures short-term market breadth participation.", "formula": "Count(Close > SMA_20) / TotalStocks × 100" },
+        { "id": "stocks_above_sma50_pct", "label": "Stocks > SMA50", "type": "number", "unit": "%", "description": "Percentage of stocks trading above their 50-day SMA. A key intermediate-term breadth indicator.", "formula": "Count(Close > SMA_50) / TotalStocks × 100" },
+        { "id": "stocks_above_sma200_pct", "label": "Stocks > SMA200", "type": "number", "unit": "%", "description": "Percentage of stocks trading above their 200-day SMA. The primary long-term breadth indicator; readings below 50% signal a weak market.", "formula": "Count(Close > SMA_200) / TotalStocks × 100" },
+        { "id": "new_highs", "label": "New Highs", "type": "number", "description": "Number of stocks making new 52-week highs today. Rising new highs confirm a healthy, leadership-driven market.", "formula": "Count of stocks at 52-week highs" },
+        { "id": "new_lows", "label": "New Lows", "type": "number", "description": "Number of stocks making new 52-week lows today. Rising new lows warn of broad weakness beneath the surface.", "formula": "Count of stocks at 52-week lows" },
+        { "id": "new_high_new_low_ratio", "label": "NH/NL Ratio", "type": "number", "description": "Ratio of new highs to new lows. Values well above 1 indicate a bull market; values below 1 indicate a bear market.", "formula": "NewHighs / NewLows" },
+        { "id": "pct_52w_high", "label": "52W High %", "type": "number", "unit": "%", "description": "Percentage of stocks at or near their 52-week high. High readings confirm a strong market with many leaders.", "formula": "Count(Close within 5% of 52W High) / TotalStocks × 100" },
+        { "id": "pct_52w_low", "label": "52W Low %", "type": "number", "unit": "%", "description": "Percentage of stocks at or near their 52-week low. High readings signal broad weakness and risk-off conditions.", "formula": "Count(Close within 5% of 52W Low) / TotalStocks × 100" },
+        { "id": "market_momentum_breadth", "label": "Momentum Breadth", "type": "number", "description": "Percentage of stocks with positive momentum scores. Measures how broadly momentum is distributed across the market.", "formula": "Count(MomentumScore > 0) / TotalStocks × 100" }
+      ]
+    },
+    {
+      "id": "sector_momentum",
+      "label": "Sector Momentum",
+      "description": "Sector returns, rank, breadth",
+      "indicators": [
+        { "id": "sector_return_1d", "label": "Sector Return 1D", "type": "number", "unit": "%", "description": "The stock's sector return over 1 day. Provides context for whether sector-level flows are supporting or dragging the stock.", "formula": "(SectorIndex_Close / SectorIndex_Close[1 day ago] - 1) × 100" },
+        { "id": "sector_return_5d", "label": "Sector Return 5D", "type": "number", "unit": "%", "description": "The stock's sector return over 5 days. Weekly sector momentum affects individual stock behavior.", "formula": "(SectorIndex_Close / SectorIndex_Close[5 days ago] - 1) × 100" },
+        { "id": "sector_return_20d", "label": "Sector Return 20D", "type": "number", "unit": "%", "description": "The stock's sector return over 20 days. Monthly sector momentum is a key driver of stock selection.", "formula": "(SectorIndex_Close / SectorIndex_Close[20 days ago] - 1) × 100" },
+        { "id": "sector_return_60d", "label": "Sector Return 60D", "type": "number", "unit": "%", "description": "The stock's sector return over 60 days. Quarterly sector performance for identifying sector rotation.", "formula": "(SectorIndex_Close / SectorIndex_Close[60 days ago] - 1) × 100" },
+        { "id": "sector_return_120d", "label": "Sector Return 120D", "type": "number", "unit": "%", "description": "The stock's sector return over 120 days. Half-year sector trend for identifying persistent sector leadership.", "formula": "(SectorIndex_Close / SectorIndex_Close[120 days ago] - 1) × 100" },
+        { "id": "sector_relative_strength", "label": "Sector RS", "type": "number", "description": "Sector return relative to the overall market. Positive values mean the sector is outperforming Nifty.", "formula": "SectorReturn - NiftyReturn" },
+        { "id": "sector_rank", "label": "Sector Rank", "type": "number", "description": "Rank of this stock's sector among all sectors by momentum. Rank 1 is the strongest sector.", "formula": "Rank(SectorReturn, all sectors)" },
+        { "id": "sector_percentile", "label": "Sector Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this sector's momentum among all sectors. Higher means the sector is outperforming most others.", "formula": "Percentile(SectorMomentum, all sectors)" },
+        { "id": "sector_momentum_score", "label": "Sector Momentum Score", "type": "number", "description": "Composite momentum score for the sector, combining multi-timeframe returns and relative strength. Used to tilt toward stocks in leading sectors.", "formula": "Weighted(SectorReturn_5D, _20D, _60D, SectorRS)" },
+        { "id": "sector_breadth", "label": "Sector Breadth", "type": "number", "description": "Percentage of stocks within the sector that are in uptrends. High breadth means the sector rally is broad-based, not driven by a few names.", "formula": "Count(sector stocks in uptrend) / TotalSectorStocks" },
+        { "id": "sector_advance_decline", "label": "Sector A/D", "type": "number", "description": "Advancing minus declining stocks within the sector. Positive values confirm broad sector participation.", "formula": "SectorAdvances - SectorDeclines" },
+        { "id": "sector_stocks_above_sma20", "label": "Sector > SMA20", "type": "number", "unit": "%", "description": "Percentage of stocks in the sector above their 20-day SMA. Measures short-term sector breadth health.", "formula": "Count(Close > SMA_20 in sector) / SectorStocks × 100" },
+        { "id": "sector_stocks_above_sma50", "label": "Sector > SMA50", "type": "number", "unit": "%", "description": "Percentage of stocks in the sector above their 50-day SMA. Intermediate-term sector breadth measure.", "formula": "Count(Close > SMA_50 in sector) / SectorStocks × 100" },
+        { "id": "sector_stocks_above_sma200", "label": "Sector > SMA200", "type": "number", "unit": "%", "description": "Percentage of stocks in the sector above their 200-day SMA. Long-term sector health indicator.", "formula": "Count(Close > SMA_200 in sector) / SectorStocks × 100" },
+        { "id": "sector_new_highs", "label": "Sector New Highs", "type": "number", "description": "Number of stocks in the sector making new 52-week highs. More new highs confirm sector leadership.", "formula": "Count of sector stocks at 52-week highs" },
+        { "id": "sector_new_lows", "label": "Sector New Lows", "type": "number", "description": "Number of stocks in the sector making new 52-week lows. Rising new lows warn of sector-wide weakness.", "formula": "Count of sector stocks at 52-week lows" },
+        { "id": "sector_momentum_breadth", "label": "Sector Mom Breadth", "type": "number", "description": "Percentage of sector stocks with positive momentum scores. A broad measure of momentum participation within the sector.", "formula": "Count(MomentumScore > 0 in sector) / SectorStocks × 100" }
+      ]
+    },
+    {
+      "id": "peer_momentum",
+      "label": "Peer Momentum",
+      "description": "Rank and percentile within peer group",
+      "indicators": [
+        { "id": "peer_return_5d", "label": "Peer Return 5D", "type": "number", "unit": "%", "description": "Average 5-day return of the stock's peer group. Provides context for whether the peer group is strong or weak.", "formula": "Average(Return_5D of peer stocks)" },
+        { "id": "peer_return_20d", "label": "Peer Return 20D", "type": "number", "unit": "%", "description": "Average 20-day return of the stock's peer group. Monthly peer performance for contextualizing the stock's move.", "formula": "Average(Return_20D of peer stocks)" },
+        { "id": "peer_return_60d", "label": "Peer Return 60D", "type": "number", "unit": "%", "description": "Average 60-day return of the stock's peer group. Quarterly peer momentum for identifying group-level trends.", "formula": "Average(Return_60D of peer stocks)" },
+        { "id": "peer_rank", "label": "Peer Rank", "type": "number", "description": "This stock's rank within its peer group by momentum. Rank 1 is the strongest stock among its direct peers.", "formula": "Rank(Stock_Momentum, within peer group)" },
+        { "id": "peer_percentile", "label": "Peer Percentile", "type": "number", "unit": "%", "description": "Percentile rank of this stock's momentum within its peer group. Shows whether this stock leads or lags its direct competitors.", "formula": "Percentile(Stock_Momentum, within peer group)" },
+        { "id": "peer_momentum_score", "label": "Peer Momentum Score", "type": "number", "description": "Composite momentum score averaged across the peer group. Identifies whether the stock is in a strong or weak peer cohort.", "formula": "Average(MomentumScore of peer stocks)" }
+      ]
+    },
+    {
+      "id": "intraday_momentum",
+      "label": "Intraday Momentum",
+      "description": "Open-to-current, ORB, intraday RS",
+      "indicators": [
+        { "id": "open_to_current_return", "label": "Open to Current", "type": "number", "unit": "%", "description": "Return from today's open to the current price. Shows intraday momentum direction and strength.", "formula": "(Current / Open - 1) × 100" },
+        { "id": "high_low_position", "label": "High-Low Position", "type": "number", "unit": "%", "description": "Current price position within today's range. Values near 100% mean price is at the day's high (bullish); near 0% at the low.", "formula": "(Current - Low) / (High - Low) × 100" },
+        { "id": "intraday_vwap_distance", "label": "VWAP Distance", "type": "number", "unit": "%", "description": "Percentage distance of current price from today's VWAP. Shows intraday positioning relative to average execution price.", "formula": "(Current / VWAP - 1) × 100" },
+        { "id": "intraday_vwap_slope", "label": "VWAP Slope", "type": "number", "description": "Slope of the intraday VWAP line. Rising slope means the session's volume-weighted price is climbing.", "formula": "LinearSlope(Intraday_VWAP, recent bars)" },
+        { "id": "first_15min_return", "label": "First 15min Return", "type": "number", "unit": "%", "description": "Return during the first 15 minutes of trading. The opening move often sets the tone for the session.", "formula": "(Price at 9:30 / Open - 1) × 100" },
+        { "id": "first_30min_return", "label": "First 30min Return", "type": "number", "unit": "%", "description": "Return during the first 30 minutes of trading. Captures the initial price discovery phase.", "formula": "(Price at 9:45 / Open - 1) × 100" },
+        { "id": "first_hour_return", "label": "First Hour Return", "type": "number", "unit": "%", "description": "Return during the first hour of trading. The first hour typically captures the highest volume and strongest directional moves.", "formula": "(Price at 10:15 / Open - 1) × 100" },
+        { "id": "intraday_volume_vs_average", "label": "Intraday Vol vs Avg", "type": "number", "description": "Current session volume relative to the average volume at this time of day. Detects unusual intraday activity.", "formula": "Volume(now) / Expected_Volume(elapsed time)" },
+        { "id": "intraday_rs_nifty", "label": "Intraday RS Nifty", "type": "number", "description": "Stock's intraday return minus Nifty's intraday return. Shows real-time relative outperformance vs the market.", "formula": "IntradayReturn(Stock) - IntradayReturn(Nifty)" },
+        { "id": "intraday_rs_sector", "label": "Intraday RS Sector", "type": "number", "description": "Stock's intraday return minus its sector's intraday return. Real-time sector-relative performance.", "formula": "IntradayReturn(Stock) - IntradayReturn(Sector)" },
+        { "id": "intraday_rs_slope", "label": "Intraday RS Slope", "type": "number", "description": "Slope of the intraday relative strength line. Rising slope means the stock is progressively outperforming during the session.", "formula": "LinearSlope(IntradayRS, recent bars)" },
+        { "id": "intraday_high_breakout", "label": "Intraday High Breakout", "type": "boolean", "description": "True when the stock breaks above its prior session's high during the current session. An intraday momentum signal.", "formula": "Current > High[yesterday]" },
+        { "id": "intraday_low_breakdown", "label": "Intraday Low Breakdown", "type": "boolean", "description": "True when the stock breaks below its prior session's low. A bearish intraday signal.", "formula": "Current < Low[yesterday]" },
+        { "id": "opening_range_breakout", "label": "ORB", "type": "boolean", "description": "True when price breaks above the opening range (first 15/30 min high). A popular intraday breakout strategy trigger.", "formula": "Current > Max(High, first 15-30 min)" },
+        { "id": "opening_range_breakout_volume", "label": "ORB Volume", "type": "number", "description": "Volume at the time of the opening range breakout. Higher volume confirms the breakout's reliability.", "formula": "Volume at ORB trigger time" },
+        { "id": "opening_range_high_break", "label": "OR High Break", "type": "boolean", "description": "True when price breaks above the opening range high. Bullish intraday signal.", "formula": "Current > OpeningRangeHigh" },
+        { "id": "opening_range_low_break", "label": "OR Low Break", "type": "boolean", "description": "True when price breaks below the opening range low. Bearish intraday signal.", "formula": "Current < OpeningRangeLow" }
+      ]
+    },
+    {
+      "id": "risk_adjusted_momentum",
+      "label": "Risk-Adjusted Momentum",
+      "description": "Sharpe, Sortino, return-to-risk ratios",
+      "indicators": [
+        { "id": "sharpe_20d", "label": "Sharpe 20D", "type": "number", "description": "Annualized Sharpe ratio over 20 days. Measures return per unit of total risk. Higher values mean better risk-adjusted momentum.", "formula": "(Mean(DailyReturn, 20) × 252) / (StdDev(DailyReturn, 20) × √252)" },
+        { "id": "sharpe_60d", "label": "Sharpe 60D", "type": "number", "description": "Annualized Sharpe ratio over 60 days. A quarterly risk-adjusted performance measure.", "formula": "(Mean(DailyReturn, 60) × 252) / (StdDev(DailyReturn, 60) × √252)" },
+        { "id": "sharpe_120d", "label": "Sharpe 120D", "type": "number", "description": "Annualized Sharpe ratio over 120 days. A half-year risk-adjusted return that smooths short-term noise.", "formula": "(Mean(DailyReturn, 120) × 252) / (StdDev(DailyReturn, 120) × √252)" },
+        { "id": "sortino_20d", "label": "Sortino 20D", "type": "number", "description": "Annualized Sortino ratio over 20 days. Like Sharpe but only penalizes downside volatility, better for momentum stocks that spike upward.", "formula": "(Mean(DailyReturn, 20) × 252) / (DownsideDev(DailyReturn, 20) × √252)" },
+        { "id": "sortino_60d", "label": "Sortino 60D", "type": "number", "description": "Annualized Sortino ratio over 60 days. Quarterly downside-risk-adjusted performance measure.", "formula": "(Mean(DailyReturn, 60) × 252) / (DownsideDev(DailyReturn, 60) × √252)" },
+        { "id": "sortino_120d", "label": "Sortino 120D", "type": "number", "description": "Annualized Sortino ratio over 120 days. Half-year performance adjusted for downside risk only.", "formula": "(Mean(DailyReturn, 120) × 252) / (DownsideDev(DailyReturn, 120) × √252)" },
+        { "id": "return_to_volatility", "label": "Return / Volatility", "type": "number", "description": "Simple ratio of total return to annualized volatility. Quick gauge of whether the return justifies the risk taken.", "formula": "Return / AnnualizedVolatility" },
+        { "id": "return_to_drawdown", "label": "Return / Drawdown", "type": "number", "description": "Total return divided by maximum drawdown. Higher values mean the stock delivered good returns relative to its worst loss. Also called the Calmar-like ratio.", "formula": "Return / |MaxDrawdown|" }
+      ]
+    },
+    {
+      "id": "return_distribution",
+      "label": "Return Distribution",
+      "description": "Mean, median, skewness, kurtosis, extremes",
+      "indicators": [
+        { "id": "mean_daily_return", "label": "Mean Daily Return", "type": "number", "unit": "%", "description": "Average daily return over the lookback period. The expected daily gain or loss based on recent history.", "formula": "Average(DailyReturn, N)" },
+        { "id": "median_daily_return", "label": "Median Daily Return", "type": "number", "unit": "%", "description": "Median daily return over the lookback period. Less sensitive to outliers than the mean, showing the typical day's return.", "formula": "Median(DailyReturn, N)" },
+        { "id": "std_daily_return", "label": "Std Daily Return", "type": "number", "unit": "%", "description": "Standard deviation of daily returns. Measures the dispersion of daily returns around the mean.", "formula": "StdDev(DailyReturn, N)" },
+        { "id": "skewness", "label": "Skewness", "type": "number", "description": "Skewness of the return distribution. Positive skew means occasional large gains; negative skew means occasional large losses.", "formula": "E[((R - Mean) / StdDev)³]" },
+        { "id": "kurtosis", "label": "Kurtosis", "type": "number", "description": "Kurtosis of the return distribution. Higher kurtosis means fatter tails -- more frequent extreme moves than a normal distribution.", "formula": "E[((R - Mean) / StdDev)⁴] - 3" },
+        { "id": "best_day", "label": "Best Day", "type": "number", "unit": "%", "description": "Largest single-day gain in the lookback period. Shows the upside tail risk/opportunity for this stock.", "formula": "Max(DailyReturn, N)" },
+        { "id": "worst_day", "label": "Worst Day", "type": "number", "unit": "%", "description": "Largest single-day loss in the lookback period. Shows the downside tail risk for position sizing and stop-loss decisions.", "formula": "Min(DailyReturn, N)" },
+        { "id": "large_positive_days", "label": "Large Positive Days", "type": "number", "description": "Count of days with returns exceeding 2 standard deviations above the mean. Frequent large up days signal momentum bursts.", "formula": "Count(DailyReturn > Mean + 2×StdDev, N)" },
+        { "id": "large_negative_days", "label": "Large Negative Days", "type": "number", "description": "Count of days with returns worse than 2 standard deviations below the mean. Frequent large down days signal unstable price action.", "formula": "Count(DailyReturn < Mean - 2×StdDev, N)" }
+      ]
+    },
+    {
+      "id": "beta_and_correlation",
+      "label": "Beta & Correlation",
+      "description": "Beta, upside/downside beta, correlations",
+      "indicators": [
+        { "id": "beta_20d", "label": "Beta 20D", "type": "number", "description": "Beta relative to Nifty over 20 days. Measures short-term sensitivity to market moves. Beta > 1 means the stock amplifies market moves.", "formula": "Covariance(Stock, Nifty, 20) / Variance(Nifty, 20)" },
+        { "id": "beta_60d", "label": "Beta 60D", "type": "number", "description": "Beta relative to Nifty over 60 days. Quarterly market sensitivity measure.", "formula": "Covariance(Stock, Nifty, 60) / Variance(Nifty, 60)" },
+        { "id": "beta_120d", "label": "Beta 120D", "type": "number", "description": "Beta relative to Nifty over 120 days. Half-year market sensitivity, more stable than shorter windows.", "formula": "Covariance(Stock, Nifty, 120) / Variance(Nifty, 120)" },
+        { "id": "beta_252d", "label": "Beta 252D", "type": "number", "description": "Beta relative to Nifty over 252 days (1 year). The standard annual beta used for portfolio risk management.", "formula": "Covariance(Stock, Nifty, 252) / Variance(Nifty, 252)" },
+        { "id": "rolling_beta", "label": "Rolling Beta", "type": "number", "description": "Beta calculated on a rolling window. Tracks how the stock's market sensitivity is changing over time.", "formula": "Rolling Covariance / Rolling Variance" },
+        { "id": "upside_beta", "label": "Upside Beta", "type": "number", "description": "Beta calculated only on days when Nifty is up. Higher upside beta means the stock captures more of the market's gains.", "formula": "Covariance(Stock, Nifty, on Nifty up days) / Variance(Nifty, up days)" },
+        { "id": "downside_beta", "label": "Downside Beta", "type": "number", "description": "Beta calculated only on days when Nifty is down. Lower downside beta means the stock falls less when the market drops.", "formula": "Covariance(Stock, Nifty, on Nifty down days) / Variance(Nifty, down days)" },
+        { "id": "corr_nifty_20d", "label": "Corr Nifty 20D", "type": "number", "description": "Correlation of stock returns with Nifty over 20 days. Shows how tightly the stock tracks the market short-term.", "formula": "Correlation(Stock_Return, Nifty_Return, 20)" },
+        { "id": "corr_nifty_60d", "label": "Corr Nifty 60D", "type": "number", "description": "Correlation of stock returns with Nifty over 60 days. Quarterly market co-movement measure.", "formula": "Correlation(Stock_Return, Nifty_Return, 60)" },
+        { "id": "corr_sector_20d", "label": "Corr Sector 20D", "type": "number", "description": "Correlation of stock returns with its sector over 20 days. Shows whether the stock moves with or independent of its sector.", "formula": "Correlation(Stock_Return, Sector_Return, 20)" },
+        { "id": "corr_sector_60d", "label": "Corr Sector 60D", "type": "number", "description": "Correlation of stock returns with its sector over 60 days. Longer-window sector co-movement.", "formula": "Correlation(Stock_Return, Sector_Return, 60)" },
+        { "id": "corr_peer_group", "label": "Corr Peer Group", "type": "number", "description": "Average correlation of the stock with its peer group stocks. Low correlation means the stock moves independently of its peers.", "formula": "Average(Correlation(Stock, each Peer, 60))" }
+      ]
+    },
+    {
+      "id": "derivatives",
+      "label": "Derivatives",
+      "description": "OI, futures basis, options IV, put-call ratio",
+      "indicators": [
+        { "id": "open_interest", "label": "Open Interest", "type": "number", "description": "Total outstanding futures/options contracts. Requires derivatives data. Rising OI with rising price confirms new longs entering.", "formula": "Total outstanding contracts" },
+        { "id": "oi_change", "label": "OI Change", "type": "number", "description": "Change in open interest from the prior session. Requires derivatives data. Positive change with price rise signals long buildup.", "formula": "OI(today) - OI(yesterday)" },
+        { "id": "oi_change_percentage", "label": "OI Change %", "type": "number", "unit": "%", "description": "Percentage change in open interest. Requires derivatives data. Large percentage increases indicate strong new positioning.", "formula": "(OI(today) / OI(yesterday) - 1) × 100" },
+        { "id": "volume_oi_ratio", "label": "Volume/OI Ratio", "type": "number", "description": "Derivatives volume divided by open interest. Requires derivatives data. High ratios suggest active trading relative to existing positions.", "formula": "Derivatives_Volume / OpenInterest" },
+        { "id": "price_oi_relationship", "label": "Price-OI Relationship", "type": "string", "description": "Categorical label describing the price-OI combination (long buildup, short buildup, long unwinding, short covering). Requires derivatives data.", "formula": "Based on Price direction × OI direction" },
+        { "id": "futures_basis", "label": "Futures Basis", "type": "number", "unit": "₹", "description": "Difference between futures price and spot price. Requires derivatives data. Positive basis (premium) indicates bullish expectations.", "formula": "FuturesPrice - SpotPrice" },
+        { "id": "futures_premium_discount", "label": "Futures Premium/Discount", "type": "number", "unit": "%", "description": "Futures basis as a percentage of spot price. Requires derivatives data. Expanding premium suggests growing bullish consensus.", "formula": "(FuturesPrice / SpotPrice - 1) × 100" },
+        { "id": "put_call_ratio", "label": "Put-Call Ratio", "type": "number", "description": "Ratio of put volume/OI to call volume/OI. Requires derivatives data. High PCR indicates bearish sentiment (contrarian bullish); low PCR indicates bullish sentiment.", "formula": "PutVolume / CallVolume" },
+        { "id": "iv", "label": "Implied Volatility", "type": "number", "unit": "%", "description": "Options-implied volatility. Requires derivatives data. Shows the market's expectation of future price movement magnitude.", "formula": "Derived from option prices using Black-Scholes" },
+        { "id": "iv_percentile", "label": "IV Percentile", "type": "number", "unit": "%", "description": "Current IV ranked against the stock's own IV history. Requires derivatives data. Low IV percentile means options are cheap (squeeze setup).", "formula": "Percentile(IV, own IV history 252 days)" },
+        { "id": "iv_change", "label": "IV Change", "type": "number", "unit": "%", "description": "Change in implied volatility from the prior session. Requires derivatives data. Rising IV indicates increasing uncertainty or event anticipation.", "formula": "IV(today) - IV(yesterday)" },
+        { "id": "call_oi_change", "label": "Call OI Change", "type": "number", "description": "Change in call option open interest. Requires derivatives data. Rising call OI indicates new bullish bets.", "formula": "Call_OI(today) - Call_OI(yesterday)" },
+        { "id": "put_oi_change", "label": "Put OI Change", "type": "number", "description": "Change in put option open interest. Requires derivatives data. Rising put OI indicates new bearish bets or hedging.", "formula": "Put_OI(today) - Put_OI(yesterday)" },
+        { "id": "call_put_oi_ratio", "label": "Call/Put OI Ratio", "type": "number", "description": "Ratio of call OI to put OI. Requires derivatives data. Rising ratio suggests growing bullish positioning.", "formula": "Call_OI / Put_OI" },
+        { "id": "max_pain", "label": "Max Pain", "type": "number", "unit": "₹", "description": "Price level where options writers have minimum loss. Requires derivatives data. Price tends to gravitate toward max pain near expiry.", "formula": "Price that minimizes total option buyer payoff" },
+        { "id": "option_volume", "label": "Option Volume", "type": "number", "description": "Total options contracts traded today. Requires derivatives data. Unusually high option volume can precede big stock moves.", "formula": "Total options contracts traded" },
+        { "id": "option_oi_concentration", "label": "Option OI Concentration", "type": "number", "description": "Concentration of OI at specific strike prices. Requires derivatives data. High concentration at a strike creates a support/resistance magnet.", "formula": "Max(OI at any strike) / Total OI" }
+      ]
+    },
+    {
+      "id": "delivery",
+      "label": "Delivery",
+      "description": "Delivery quantity, percentage, trend",
+      "indicators": [
+        { "id": "delivery_quantity", "label": "Delivery Quantity", "type": "number", "description": "Number of shares that resulted in actual delivery (settlement). Requires NSE delivery data. High delivery indicates genuine buying interest, not just speculation.", "formula": "Shares settled for delivery" },
+        { "id": "delivery_percentage", "label": "Delivery %", "type": "number", "unit": "%", "description": "Percentage of traded volume that resulted in delivery. Requires NSE delivery data. Higher percentages suggest institutional or investor-driven buying.", "formula": "DeliveryQuantity / TotalVolume × 100" },
+        { "id": "delivery_vs_20d_average", "label": "Delivery vs 20D Avg", "type": "number", "description": "Today's delivery quantity relative to its 20-day average. Requires NSE delivery data. Values above 1 indicate unusually high conviction buying.", "formula": "DeliveryQuantity / Average(DeliveryQuantity, 20)" },
+        { "id": "delivery_trend", "label": "Delivery Trend", "type": "number", "description": "Slope of the delivery percentage over recent sessions. Requires NSE delivery data. Rising delivery trend confirms growing real demand.", "formula": "LinearSlope(Delivery%, 10)" },
+        { "id": "delivery_price_confirmation", "label": "Delivery Price Confirm", "type": "boolean", "description": "True when price is rising alongside rising delivery percentage. Requires NSE delivery data. Confirms that the price advance is driven by genuine buying.", "formula": "Price rising AND Delivery% rising" }
+      ]
+    },
+    {
+      "id": "event_momentum",
+      "label": "Event Momentum",
+      "description": "News, sentiment, earnings proximity",
+      "indicators": [
+        { "id": "news_count_24h", "label": "News Count 24H", "type": "number", "description": "Number of news articles about the stock in the last 24 hours. Requires external news data. Sudden spikes may precede or accompany price moves.", "formula": "Count of news articles in last 24 hours" },
+        { "id": "news_count_7d", "label": "News Count 7D", "type": "number", "description": "Number of news articles about the stock in the last 7 days. Requires external news data. Sustained news flow indicates the stock is in the spotlight.", "formula": "Count of news articles in last 7 days" },
+        { "id": "positive_news_ratio", "label": "Positive News Ratio", "type": "number", "unit": "%", "description": "Percentage of recent news with positive sentiment. Requires external news/sentiment data. Higher ratios suggest a favorable narrative.", "formula": "PositiveNewsCount / TotalNewsCount × 100" },
+        { "id": "negative_news_ratio", "label": "Negative News Ratio", "type": "number", "unit": "%", "description": "Percentage of recent news with negative sentiment. Requires external news/sentiment data. Higher ratios warn of developing negative narratives.", "formula": "NegativeNewsCount / TotalNewsCount × 100" },
+        { "id": "sentiment_score", "label": "Sentiment Score", "type": "number", "description": "Composite sentiment score from news and social media. Requires external sentiment data. Positive values indicate bullish sentiment; negative indicates bearish.", "formula": "Weighted(NewsSentiment, SocialSentiment)" },
+        { "id": "earnings_days_away", "label": "Earnings Days Away", "type": "number", "description": "Trading days until the next earnings announcement. Requires corporate events data. Approaching earnings may increase volatility and require position adjustments.", "formula": "NextEarningsDate - Today" },
+        { "id": "recent_earnings", "label": "Recent Earnings", "type": "boolean", "description": "True if earnings were reported within the last 5 trading days. Requires corporate events data. Post-earnings drift can drive momentum for several days.", "formula": "DaysSinceEarnings <= 5" },
+        { "id": "earnings_surprise", "label": "Earnings Surprise", "type": "number", "unit": "%", "description": "Percentage by which actual earnings exceeded or missed consensus estimates. Requires earnings data. Positive surprises tend to drive post-earnings momentum.", "formula": "(ActualEPS - EstimateEPS) / |EstimateEPS| × 100" }
+      ]
+    },
+    {
+      "id": "tradability_filters",
+      "label": "Tradability Filters",
+      "description": "Market cap, price, circuit, ASM/GSM, F&O availability",
+      "indicators": [
+        { "id": "filter_market_cap", "label": "Market Cap", "type": "number", "unit": "₹Cr", "description": "Total market capitalization of the company in crores. Used to filter for stocks of sufficient size and institutional interest.", "formula": "SharePrice × SharesOutstanding / 10^7" },
+        { "id": "filter_price", "label": "Price", "type": "number", "unit": "₹", "description": "Current stock price. Used to exclude penny stocks or very high-priced stocks based on trading preferences.", "formula": "Last traded price" },
+        { "id": "filter_average_dollar_volume", "label": "Avg ₹ Volume", "type": "number", "unit": "₹", "description": "Average daily rupee turnover used as a tradability filter. Ensures the stock has sufficient liquidity for meaningful position sizes.", "formula": "Average(Close × Volume, 20 days)" },
+        { "id": "filter_bid_ask_spread", "label": "Bid-Ask Spread", "type": "number", "unit": "%", "description": "Bid-ask spread percentage used as a tradability filter. Wide spreads increase execution costs, especially for frequent traders.", "formula": "(Ask - Bid) / MidPrice × 100" },
+        { "id": "filter_atr_percentage", "label": "ATR %", "type": "number", "unit": "%", "description": "ATR percentage used as a tradability filter. Extremely high ATR% stocks may be too volatile for systematic strategies.", "formula": "ATR_14 / Close × 100" },
+        { "id": "circuit_status", "label": "Circuit Status", "type": "string", "description": "Current circuit limit status of the stock. Stocks at upper/lower circuit limits cannot be freely traded and should be excluded.", "formula": "Exchange-provided circuit limit status" },
+        { "id": "upper_circuit_distance", "label": "Upper Circuit Distance", "type": "number", "unit": "%", "description": "Percentage distance from the upper circuit limit. Very close values mean the stock may hit the limit and become untradable.", "formula": "(UpperCircuit / Close - 1) × 100" },
+        { "id": "lower_circuit_distance", "label": "Lower Circuit Distance", "type": "number", "unit": "%", "description": "Percentage distance from the lower circuit limit. Helps assess the maximum possible loss in a session.", "formula": "(Close / LowerCircuit - 1) × 100" },
+        { "id": "asm_status", "label": "ASM Status", "type": "boolean", "description": "True if the stock is under Additional Surveillance Measure. ASM stocks have trading restrictions and higher margins; typically excluded from systematic strategies.", "formula": "Exchange ASM list membership" },
+        { "id": "gsm_status", "label": "GSM Status", "type": "boolean", "description": "True if the stock is under Graded Surveillance Measure. GSM stocks face progressively stricter trading restrictions and should be avoided.", "formula": "Exchange GSM list membership" },
+        { "id": "fo_available", "label": "F&O Available", "type": "boolean", "description": "True if the stock has futures and options available. F&O availability enables hedging and usually indicates higher institutional quality.", "formula": "Stock listed in F&O segment" }
+      ]
+    },
+    {
+      "id": "cross_sectional_ranking",
+      "label": "Cross-Sectional Ranking",
+      "description": "Percentile ranks across the universe",
+      "indicators": [
+        { "id": "return_5d_percentile", "label": "Return 5D Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's 5-day return among all stocks in the universe. Shows short-term return standing vs all peers.", "formula": "Percentile(Return_5D, Universe)" },
+        { "id": "return_20d_percentile", "label": "Return 20D Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's 20-day return among all stocks in the universe. Monthly return standing vs all peers.", "formula": "Percentile(Return_20D, Universe)" },
+        { "id": "return_60d_percentile", "label": "Return 60D Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's 60-day return among all stocks in the universe. Quarterly return standing vs all peers.", "formula": "Percentile(Return_60D, Universe)" },
+        { "id": "return_120d_percentile", "label": "Return 120D Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's 120-day return among all stocks in the universe. Half-year return standing vs all peers.", "formula": "Percentile(Return_120D, Universe)" },
+        { "id": "relative_strength_percentile", "label": "RS Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's relative strength score among all stocks. Shows where it stands in the cross-sectional RS distribution.", "formula": "Percentile(RS_Score, Universe)" },
+        { "id": "rank_volume_percentile", "label": "Volume Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's volume among all stocks. Shows relative trading activity vs the entire universe.", "formula": "Percentile(Volume, Universe)" },
+        { "id": "breakout_percentile", "label": "Breakout Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's breakout strength score among all stocks. Identifies the most decisive breakouts in the universe.", "formula": "Percentile(BreakoutStrength, Universe)" },
+        { "id": "trend_percentile", "label": "Trend Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's trend quality score among all stocks. Shows which stocks have the cleanest, most persistent trends.", "formula": "Percentile(TrendScore, Universe)" },
+        { "id": "rank_volatility_percentile", "label": "Volatility Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's volatility among all stocks. Helps identify relatively calm or volatile names in the universe.", "formula": "Percentile(Volatility, Universe)" },
+        { "id": "sector_strength_percentile", "label": "Sector Strength Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's sector momentum among all sectors. Shows whether the stock is in a leading or lagging sector.", "formula": "Percentile(SectorMomentum, all sectors)" },
+        { "id": "rank_momentum_percentile", "label": "Momentum Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's composite momentum score among all stocks. The primary cross-sectional momentum ranking metric.", "formula": "Percentile(CompositeMomentum, Universe)" },
+        { "id": "rank_liquidity_percentile", "label": "Liquidity Pctl", "type": "number", "unit": "%", "description": "Percentile rank of this stock's liquidity among all stocks. Ensures selected stocks are tradable relative to the full universe.", "formula": "Percentile(Liquidity, Universe)" }
+      ]
+    },
+    {
+      "id": "hard_filters",
+      "label": "Hard Filters",
+      "description": "Minimum thresholds to exclude stocks",
+      "indicators": [
+        { "id": "minimum_market_cap", "label": "Min Market Cap", "type": "number", "unit": "₹Cr", "description": "Minimum market capitalization threshold. Stocks below this are excluded to ensure institutional quality and sufficient float.", "formula": "Exclude if MarketCap < threshold" },
+        { "id": "minimum_average_daily_value", "label": "Min Avg Daily Value", "type": "number", "unit": "₹", "description": "Minimum average daily rupee turnover threshold. Ensures all selected stocks have enough liquidity for the intended position sizes.", "formula": "Exclude if AvgDailyValue < threshold" },
+        { "id": "maximum_bid_ask_spread", "label": "Max Bid-Ask Spread", "type": "number", "unit": "%", "description": "Maximum allowable bid-ask spread. Stocks with wider spreads are excluded due to excessive execution costs.", "formula": "Exclude if BidAskSpread% > threshold" },
+        { "id": "maximum_atr_percentage", "label": "Max ATR %", "type": "number", "unit": "%", "description": "Maximum allowable ATR percentage. Stocks above this threshold are excluded as too volatile for the strategy's risk parameters.", "formula": "Exclude if ATR% > threshold" },
+        { "id": "minimum_price", "label": "Min Price", "type": "number", "unit": "₹", "description": "Minimum stock price threshold. Excludes penny stocks that may have unreliable price action and poor liquidity.", "formula": "Exclude if Price < threshold" },
+        { "id": "exclude_circuit_stocks", "label": "Exclude Circuit Stocks", "type": "boolean", "description": "When true, stocks that are at or near circuit limits are excluded. Circuit stocks cannot be freely traded and carry execution risk.", "formula": "Exclude if CircuitStatus is active" },
+        { "id": "exclude_illiquid_stocks", "label": "Exclude Illiquid", "type": "boolean", "description": "When true, stocks below the liquidity threshold are excluded. Prevents taking positions that would be difficult to exit.", "formula": "Exclude if Liquidity < minimum threshold" },
+        { "id": "exclude_restricted_stocks", "label": "Exclude Restricted", "type": "boolean", "description": "When true, stocks under ASM, GSM, or other regulatory restrictions are excluded. These face additional trading constraints and margin requirements.", "formula": "Exclude if ASM or GSM status is true" }
+      ]
+    },
+    {
+      "id": "scoring",
+      "label": "Scoring Weights",
+      "description": "Category weights for composite momentum score",
+      "indicators": [
+        { "id": "price_momentum_weight", "label": "Price Momentum Weight", "type": "number", "unit": "%", "default": 25, "description": "Weight assigned to price momentum in the composite score. The primary driver capturing multi-timeframe return signals.", "formula": "Composite = Σ(Category_Score × Weight); this weight applies to Price Momentum" },
+        { "id": "relative_strength_weight", "label": "Relative Strength Weight", "type": "number", "unit": "%", "default": 20, "description": "Weight assigned to relative strength in the composite score. Rewards stocks outperforming the market, sector, and peers.", "formula": "Composite = Σ(Category_Score × Weight); this weight applies to Relative Strength" },
+        { "id": "trend_structure_weight", "label": "Trend Structure Weight", "type": "number", "unit": "%", "default": 15, "description": "Weight assigned to trend structure in the composite score. Ensures the stock has a well-defined pattern of higher highs and lows.", "formula": "Composite = Σ(Category_Score × Weight); this weight applies to Trend Structure" },
+        { "id": "breakout_weight", "label": "Breakout Weight", "type": "number", "unit": "%", "default": 15, "description": "Weight assigned to breakout signals in the composite score. Captures stocks breaking to new highs with volume confirmation.", "formula": "Composite = Σ(Category_Score × Weight); this weight applies to Breakout" },
+        { "id": "volume_confirmation_weight", "label": "Volume Confirmation Weight", "type": "number", "unit": "%", "default": 10, "description": "Weight assigned to volume-price confirmation in the composite score. Validates that price moves are backed by real trading volume.", "formula": "Composite = Σ(Category_Score × Weight); this weight applies to Volume Confirmation" },
+        { "id": "trend_quality_weight", "label": "Trend Quality Weight", "type": "number", "unit": "%", "default": 5, "description": "Weight assigned to trend quality (efficiency, R-squared) in the composite score. Favors clean, low-noise trends.", "formula": "Composite = Σ(Category_Score × Weight); this weight applies to Trend Quality" },
+        { "id": "volatility_quality_weight", "label": "Volatility Quality Weight", "type": "number", "unit": "%", "default": 5, "description": "Weight assigned to volatility characteristics in the composite score. Penalizes excessive or erratic volatility.", "formula": "Composite = Σ(Category_Score × Weight); this weight applies to Volatility Quality" },
+        { "id": "momentum_indicator_weight", "label": "Momentum Indicator Weight", "type": "number", "unit": "%", "default": 5, "description": "Weight assigned to technical momentum indicators (RSI, MACD, ADX) in the composite score. Adds confirmation from classic oscillators.", "formula": "Composite = Σ(Category_Score × Weight); this weight applies to Momentum Indicators" }
+      ]
+    },
+    {
+      "id": "forward_return_labels",
+      "label": "Forward Return Labels",
+      "description": "Forward-looking returns for ML training/evaluation",
+      "indicators": [
+        { "id": "forward_return_1d", "label": "Fwd Return 1D", "type": "number", "unit": "%", "description": "Actual return over the next 1 trading day. Used as a target label for ML models and to evaluate signal quality.", "formula": "(Close[+1] / Close - 1) × 100" },
+        { "id": "forward_return_3d", "label": "Fwd Return 3D", "type": "number", "unit": "%", "description": "Actual return over the next 3 trading days. Short-term forward label for evaluating signal predictiveness.", "formula": "(Close[+3] / Close - 1) × 100" },
+        { "id": "forward_return_5d", "label": "Fwd Return 5D", "type": "number", "unit": "%", "description": "Actual return over the next 5 trading days. A key target for weekly momentum signal evaluation.", "formula": "(Close[+5] / Close - 1) × 100" },
+        { "id": "forward_return_10d", "label": "Fwd Return 10D", "type": "number", "unit": "%", "description": "Actual return over the next 10 trading days. Two-week forward target for swing trading signal evaluation.", "formula": "(Close[+10] / Close - 1) × 100" },
+        { "id": "forward_return_20d", "label": "Fwd Return 20D", "type": "number", "unit": "%", "description": "Actual return over the next 20 trading days. Monthly forward target for evaluating intermediate holding periods.", "formula": "(Close[+20] / Close - 1) × 100" },
+        { "id": "forward_max_return_5d", "label": "Fwd Max Return 5D", "type": "number", "unit": "%", "description": "Maximum return achieved at any point over the next 5 trading days. Measures the best exit opportunity within the window.", "formula": "(Max(High[+1..+5]) / Close - 1) × 100" },
+        { "id": "forward_max_return_10d", "label": "Fwd Max Return 10D", "type": "number", "unit": "%", "description": "Maximum return achieved at any point over the next 10 trading days. Shows the upside capture opportunity with a trailing stop.", "formula": "(Max(High[+1..+10]) / Close - 1) × 100" },
+        { "id": "forward_max_drawdown_5d", "label": "Fwd Max DD 5D", "type": "number", "unit": "%", "description": "Worst peak-to-trough drawdown experienced over the next 5 trading days. Measures the near-term risk of holding the position.", "formula": "Max drawdown from Close over next 5 days" },
+        { "id": "forward_max_drawdown_10d", "label": "Fwd Max DD 10D", "type": "number", "unit": "%", "description": "Worst peak-to-trough drawdown experienced over the next 10 trading days. Two-week forward risk measure.", "formula": "Max drawdown from Close over next 10 days" },
+        { "id": "forward_max_drawdown_20d", "label": "Fwd Max DD 20D", "type": "number", "unit": "%", "description": "Worst peak-to-trough drawdown experienced over the next 20 trading days. Monthly forward risk measure for position management.", "formula": "Max drawdown from Close over next 20 days" }
+      ]
+    }
+  ]
+}
